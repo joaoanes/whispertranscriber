@@ -2,6 +2,8 @@
 
 WhisperTranscriber is a macOS application that allows users to record audio and transcribe it into text using WhisperKit. The transcribed text is automatically copied to the clipboard for easy access.
 
+<img width="338" alt="Screenshot 2025-05-01 at 22 40 40" src="https://github.com/user-attachments/assets/0870c8ac-a7e2-448f-b44b-77a055abe092" />
+
 ## Features
 
 - Utilizes [WhisperKit](https://github.com/argmaxinc/WhisperKit) for transcription.
