@@ -8,9 +8,9 @@ struct HotkeyRecorderView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> KeyCaptureView {
         let v = KeyCaptureView()
-        v.onChordCaptured = { new in
-            onChordCaptured(new)
-            // drop focus immediately
+        v.onChordCaptured = { newChord in
+            onChordCaptured(newChord)
+            // drop focus immediately so highlight goes away
             DispatchQueue.main.async { v.window?.makeFirstResponder(nil) }
         }
         return v
@@ -28,13 +28,14 @@ struct HotkeyRecorderView: NSViewRepresentable {
         override var isFlipped: Bool { true }
         override var acceptsFirstResponder: Bool { true }
 
-        override init(frame frameRect: NSRect) {
+        override init(frame frameRect: NSRect = .zero) {
             super.init(frame: frameRect)
             wantsLayer = true
             layer?.cornerRadius = 4
             layer?.borderWidth = 1
             layer?.borderColor = NSColor.separatorColor.cgColor
-            layer?.backgroundColor = NSColor.textBackgroundColor.cgColor
+            // dynamic control background that adapts to light/dark
+            layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
         }
 
         required init?(coder: NSCoder) {
@@ -43,34 +44,33 @@ struct HotkeyRecorderView: NSViewRepresentable {
             layer?.cornerRadius = 4
             layer?.borderWidth = 1
             layer?.borderColor = NSColor.separatorColor.cgColor
-            layer?.backgroundColor = NSColor.textBackgroundColor.cgColor
+            layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
         }
 
         override func draw(_ dirtyRect: NSRect) {
             super.draw(dirtyRect)
 
             // highlight border when focused
-            if window?.firstResponder === self {
-                layer?.borderColor = NSColor.keyboardFocusIndicatorColor.cgColor
-            } else {
-                layer?.borderColor = NSColor.separatorColor.cgColor
-            }
+            layer?.borderColor = (window?.firstResponder === self)
+                ? NSColor.keyboardFocusIndicatorColor.cgColor
+                : NSColor.separatorColor.cgColor
 
-            // draw the chord text centered
+            // draw the chord text
             let attrs: [NSAttributedString.Key:Any] = [
-                .font: NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular),
+                .font: NSFont.monospacedSystemFont(
+                    ofSize: NSFont.systemFontSize,
+                    weight: .regular
+                ),
                 .foregroundColor: NSColor.labelColor
             ]
             let str = NSAttributedString(string: chordToShow, attributes: attrs)
             let size = str.size()
-            // small horizontal padding
-            let x = 6.0
-            let y = (bounds.height - size.height)/2
-            str.draw(at: .init(x: x, y: y))
+            let x: CGFloat = 6
+            let y = (bounds.height - size.height) / 2
+            str.draw(at: CGPoint(x: x, y: y))
         }
 
         override func mouseDown(with event: NSEvent) {
-            // one click → grab focus
             _ = becomeFirstResponder()
         }
 
@@ -87,7 +87,6 @@ struct HotkeyRecorderView: NSViewRepresentable {
         }
 
         override func keyDown(with event: NSEvent) {
-            // capture modifiers + key
             let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
             let chars = event.charactersIgnoringModifiers?.uppercased() ?? ""
             guard let c = chars.first else { return }
@@ -102,8 +101,15 @@ struct HotkeyRecorderView: NSViewRepresentable {
         }
 
         override var intrinsicContentSize: NSSize {
-            // a bit wider to accommodate padding
             .init(width: 100, height: 24)
+        }
+
+        // ← Respond to appearance changes
+        override func viewDidChangeEffectiveAppearance() {
+            super.viewDidChangeEffectiveAppearance()
+            // Refresh dynamic background color
+            layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
+            needsDisplay = true
         }
     }
 }
