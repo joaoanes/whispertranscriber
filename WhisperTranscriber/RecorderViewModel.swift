@@ -8,6 +8,7 @@ class RecorderViewModel: ObservableObject {
     static let shared = RecorderViewModel()
 
     @Published private(set) var isRecording = false
+    @Published private(set) var isPrewarming = true
     @Published private(set) var isTranscribing = false
 
     private var recorder: AVAudioRecorder?
@@ -16,7 +17,14 @@ class RecorderViewModel: ObservableObject {
 
     private init() {
         Task {
-            whisperKit = try? await WhisperKit()
+            do {
+                let config = WhisperKitConfig(prewarm: true, load: true)
+                whisperKit = try await WhisperKit(config)
+                isPrewarming = false
+                print("✅ Pre-warming complete")
+            } catch {
+                print("❌ Error during pre-warming:", error)
+            }
         }
     }
 
@@ -82,10 +90,10 @@ class RecorderViewModel: ObservableObject {
             do {
                 let results = try await kit.transcribe(audioPath: url.path)
                 let text = results.first?.text ?? ""
-                lastTranscript = text
+                lastTranscript = text + UserDefaults.standard.string(forKey: "transcriptionSuffix")!
                 print("📝 Transcription:", text)
                 NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(text, forType: .string)
+                NSPasteboard.general.setString(lastTranscript, forType: .string)
             } catch {
                 print("❌ Transcription error:", error)
             }

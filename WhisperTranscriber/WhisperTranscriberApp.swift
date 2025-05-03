@@ -5,6 +5,7 @@ import Carbon
 struct WhisperTranscriberApp: App {
     @StateObject private var vm = RecorderViewModel.shared
     @AppStorage("toggleHotkey") private var hotkey = "⌥⌘S"
+    @AppStorage("transcriptionSuffix") private var suffix = ""
 
     init() {
         registerShortcut(hotkey)
@@ -12,59 +13,30 @@ struct WhisperTranscriberApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            // Wrap the whole menu in a ZStack so we can catch any click-away
-            ZStack {
-                Color.clear // full-size hit area
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        // deselect our capture view if it’s focused
-                        NSApp.keyWindow?.makeFirstResponder(nil)
-                    }
-
-                VStack(spacing: 8) {
-                    Text("Toggle Shortcut:")
-                        .font(.subheadline)
-                        .disabled(true)
-
-                    HotkeyRecorderView(chord: $hotkey) { newChord in
-                        // attempt to parse & register; revert on failure
-                        let old = hotkey
-                        hotkey = newChord
-                        if registerShortcut(newChord) == false {
-                            hotkey = old
-                            registerShortcut(old)
-                        }
-                    }
-                    .frame(width: 80, height: 22)
-
-                    Divider()
-
-                    Text(vm.isRecording ? "🛑 Recording…" : "▶️ Idle")
-                        .disabled(true)
-
-                    Divider()
-
-                    Button("Quit WhisperTranscriber", action: { NSApp.terminate(nil) })
-                        .keyboardShortcut("Q")
-                }
-                .padding(12)
-            }
+            WhisperTranscriberView(registerShortcut: registerShortcut)
         } label: {
             Image(systemName: "mic.fill")
               .symbolRenderingMode(.palette)
               .foregroundStyle(
-                vm.isTranscribing
-                  ? .blue        // whisper is running
-                  : vm.isRecording
-                    ? .orange    // actively recording
-                    : .white,    // idle
-                .primary        // keep secondary layer default
+                foregroundColor(),
+                .primary // keep secondary layer default
               )
           }
         .menuBarExtraStyle(.window)
     }
 
-    /// Parses and registers. Returns `true` on success; `false` on failure.
+    private func foregroundColor() -> Color {
+        switch true {
+        case vm.isTranscribing:
+            return .blue // whisper is running
+        case vm.isPrewarming:
+            return .red // pre-warming in progress
+        case vm.isRecording:
+            return .orange // actively recording
+        default:
+            return .white // idle
+        }
+    }
     @discardableResult
     private func registerShortcut(_ chord: String) -> Bool {
         // 1) figure out modifiers
@@ -102,45 +74,22 @@ struct WhisperTranscriberApp: App {
     }
 
     private func virtualKeyCode(for char: Character) -> UInt32? {
-        switch char.uppercased() {
-        case "A": return UInt32(kVK_ANSI_A)
-        case "B": return UInt32(kVK_ANSI_B)
-        case "C": return UInt32(kVK_ANSI_C)
-        case "D": return UInt32(kVK_ANSI_D)
-        case "E": return UInt32(kVK_ANSI_E)
-        case "F": return UInt32(kVK_ANSI_F)
-        case "G": return UInt32(kVK_ANSI_G)
-        case "H": return UInt32(kVK_ANSI_H)
-        case "I": return UInt32(kVK_ANSI_I)
-        case "J": return UInt32(kVK_ANSI_J)
-        case "K": return UInt32(kVK_ANSI_K)
-        case "L": return UInt32(kVK_ANSI_L)
-        case "M": return UInt32(kVK_ANSI_M)
-        case "N": return UInt32(kVK_ANSI_N)
-        case "O": return UInt32(kVK_ANSI_O)
-        case "P": return UInt32(kVK_ANSI_P)
-        case "Q": return UInt32(kVK_ANSI_Q)
-        case "R": return UInt32(kVK_ANSI_R)
-        case "S": return UInt32(kVK_ANSI_S)
-        case "T": return UInt32(kVK_ANSI_T)
-        case "U": return UInt32(kVK_ANSI_U)
-        case "V": return UInt32(kVK_ANSI_V)
-        case "W": return UInt32(kVK_ANSI_W)
-        case "X": return UInt32(kVK_ANSI_X)
-        case "Y": return UInt32(kVK_ANSI_Y)
-        case "Z": return UInt32(kVK_ANSI_Z)
-        case "0": return UInt32(kVK_ANSI_0)
-        case "1": return UInt32(kVK_ANSI_1)
-        case "2": return UInt32(kVK_ANSI_2)
-        case "3": return UInt32(kVK_ANSI_3)
-        case "4": return UInt32(kVK_ANSI_4)
-        case "5": return UInt32(kVK_ANSI_5)
-        case "6": return UInt32(kVK_ANSI_6)
-        case "7": return UInt32(kVK_ANSI_7)
-        case "8": return UInt32(kVK_ANSI_8)
-        case "9": return UInt32(kVK_ANSI_9)
-        default:  return nil
-        }
+        let keyMap: [Character: UInt32] = [
+            "A": UInt32(kVK_ANSI_A), "B": UInt32(kVK_ANSI_B), "C": UInt32(kVK_ANSI_C),
+            "D": UInt32(kVK_ANSI_D), "E": UInt32(kVK_ANSI_E), "F": UInt32(kVK_ANSI_F),
+            "G": UInt32(kVK_ANSI_G), "H": UInt32(kVK_ANSI_H), "I": UInt32(kVK_ANSI_I),
+            "J": UInt32(kVK_ANSI_J), "K": UInt32(kVK_ANSI_K), "L": UInt32(kVK_ANSI_L),
+            "M": UInt32(kVK_ANSI_M), "N": UInt32(kVK_ANSI_N), "O": UInt32(kVK_ANSI_O),
+            "P": UInt32(kVK_ANSI_P), "Q": UInt32(kVK_ANSI_Q), "R": UInt32(kVK_ANSI_R),
+            "S": UInt32(kVK_ANSI_S), "T": UInt32(kVK_ANSI_T), "U": UInt32(kVK_ANSI_U),
+            "V": UInt32(kVK_ANSI_V), "W": UInt32(kVK_ANSI_W), "X": UInt32(kVK_ANSI_X),
+            "Y": UInt32(kVK_ANSI_Y), "Z": UInt32(kVK_ANSI_Z), "0": UInt32(kVK_ANSI_0),
+            "1": UInt32(kVK_ANSI_1), "2": UInt32(kVK_ANSI_2), "3": UInt32(kVK_ANSI_3),
+            "4": UInt32(kVK_ANSI_4), "5": UInt32(kVK_ANSI_5), "6": UInt32(kVK_ANSI_6),
+            "7": UInt32(kVK_ANSI_7), "8": UInt32(kVK_ANSI_8), "9": UInt32(kVK_ANSI_9)
+        ]
+        return keyMap[char.uppercased().first ?? Character("")]
     }
 
 }
+
