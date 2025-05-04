@@ -16,23 +16,48 @@ struct WhisperTranscriberView: View {
                     NSApp.keyWindow?.makeFirstResponder(nil)
                 }
             if vm.isPrewarming {
-                PrewarmingView()
+                PrewarmingView(isDownloading: vm.isDownloading, downloadProgress: vm.downloadProgress)
             } else {
                 IdleRecordingView(
                     hotkey: $hotkey,
                     suffix: $suffix,
                     registerShortcut: registerShortcut,
-                    isRecording: vm.isRecording
+                    isRecording: vm.isRecording,
+                    isTranscribing:
+                        vm.isTranscribing
                 )
             }
         }
     }
 }
+
 struct PrewarmingView: View {
+    var isDownloading: Bool
+    var downloadProgress: Double
     var body: some View {
         VStack {
-            Text("WhisperKit is loading...")
-            ProgressView()
+            if (isDownloading) {
+                Text("WhisperKit is downloading...")
+                Text("This just happens once per install")
+                    .font(.footnote)
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.secondary)
+                ProgressView(value: downloadProgress, total: 1.0)
+                Divider()
+                Text("If you want to avoid this, download the non-lite version of WhisperTranscriber")
+                    .font(.footnote)
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.secondary)
+            } else {
+                Text("WhisperKit is loading...")
+                Text("This can take up to one minute on the first open")
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+                ProgressView()
+            }
+            
+            Button("Quit WhisperTranscriber", action: { NSApp.terminate(nil) })
+                .keyboardShortcut("Q")
         }
         .padding(10)
     }
@@ -43,6 +68,17 @@ struct IdleRecordingView: View {
     @Binding var suffix: String
     var registerShortcut: (String) -> Bool
     var isRecording: Bool
+    var isTranscribing: Bool
+
+    private func statusText() -> String {
+        if isTranscribing {
+            return "🔄 Transcribing…"
+        } else if isRecording {
+            return "🛑 Recording…"
+        } else {
+            return "▶️ Idle"
+        }
+    }
 
     var body: some View {
         VStack(spacing: 8) {
@@ -71,14 +107,14 @@ struct IdleRecordingView: View {
                 .multilineTextAlignment(.center)
                 .frame(width: 80, height: 22)
             
-            Text(isRecording ? "🛑 Recording…" : "▶️ Idle")
+            Text(statusText())
                 .disabled(true)
             
             Divider()
             
             Button("Quit WhisperTranscriber", action: { NSApp.terminate(nil) })
                 .keyboardShortcut("Q")
-        }
+        }.padding(10)
     }
 }
 
@@ -87,7 +123,11 @@ struct WhisperTranscriberView_Previews: PreviewProvider {
     static var previews: some View {
         
         Group {
-            PrewarmingView()
+            PrewarmingView(isDownloading: true, downloadProgress: 0)
+                .previewDisplayName("Downloading")
+                .fixedSize()
+            
+            PrewarmingView(isDownloading: false, downloadProgress: 0)
                 .previewDisplayName("Prewarming")
                 .fixedSize()
             
@@ -95,7 +135,8 @@ struct WhisperTranscriberView_Previews: PreviewProvider {
                 hotkey: .constant("⌥⌘S"),
                 suffix: .constant(""),
                 registerShortcut: { _ in true },
-                isRecording: false
+                isRecording: false,
+                isTranscribing: false
             )
             .previewDisplayName("Idle/Recording")
             .fixedSize()

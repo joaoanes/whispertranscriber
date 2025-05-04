@@ -10,17 +10,46 @@
 		44104C7F2DC403F400993142 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 44104C7E2DC403F400993142 /* WhisperKit */; };
 		44104C8D2DC4111700993142 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 44104C8B2DC4111700993142 /* AudioToolbox.framework */; };
 		44104C8E2DC4111700993142 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 44104C8C2DC4111700993142 /* AudioUnit.framework */; };
+		44104DA02DC6EB9700993142 /* hf in Resources */ = {isa = PBXBuildFile; fileRef = 44104D9F2DC6EB9700993142 /* hf */; };
+		44104DB82DC6F81B00993142 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 44104C8B2DC4111700993142 /* AudioToolbox.framework */; };
+		44104DB92DC6F81B00993142 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 44104C8C2DC4111700993142 /* AudioUnit.framework */; };
+		44104DBA2DC6F81B00993142 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 44104DB52DC6F81B00993142 /* WhisperKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		44104C6E2DC402A000993142 /* WhisperTranscriber.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WhisperTranscriber.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		44104C8B2DC4111700993142 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		44104C8C2DC4111700993142 /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
+		44104D9F2DC6EB9700993142 /* hf */ = {isa = PBXFileReference; lastKnownFileType = folder; name = hf; path = ../../Documents/hf; sourceTree = "<group>"; };
+		44104DC02DC6F81B00993142 /* WhisperTranscriberLite.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WhisperTranscriberLite.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		44104CFE2DC6D2AA00993142 /* Exceptions for "WhisperTranscriber" folder in "WhisperTranscriber" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+				"lite-Info.plist",
+			);
+			target = 44104C6D2DC402A000993142 /* WhisperTranscriber */;
+		};
+		44104DC12DC6F81B00993142 /* Exceptions for "WhisperTranscriber" folder in "WhisperTranscriberLite" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+				"lite-Info.plist",
+			);
+			target = 44104DB42DC6F81B00993142 /* WhisperTranscriberLite */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		44104C702DC402A000993142 /* WhisperTranscriber */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				44104CFE2DC6D2AA00993142 /* Exceptions for "WhisperTranscriber" folder in "WhisperTranscriber" target */,
+				44104DC12DC6F81B00993142 /* Exceptions for "WhisperTranscriber" folder in "WhisperTranscriberLite" target */,
+			);
 			path = WhisperTranscriber;
 			sourceTree = "<group>";
 		};
@@ -37,12 +66,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		44104DB72DC6F81B00993142 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				44104DB82DC6F81B00993142 /* AudioToolbox.framework in Frameworks */,
+				44104DB92DC6F81B00993142 /* AudioUnit.framework in Frameworks */,
+				44104DBA2DC6F81B00993142 /* WhisperKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		44104C652DC402A000993142 = {
 			isa = PBXGroup;
 			children = (
+				44104D9F2DC6EB9700993142 /* hf */,
 				44104C702DC402A000993142 /* WhisperTranscriber */,
 				44104C8A2DC4111700993142 /* Frameworks */,
 				44104C6F2DC402A000993142 /* Products */,
@@ -53,6 +93,7 @@
 			isa = PBXGroup;
 			children = (
 				44104C6E2DC402A000993142 /* WhisperTranscriber.app */,
+				44104DC02DC6F81B00993142 /* WhisperTranscriberLite.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -92,6 +133,29 @@
 			productReference = 44104C6E2DC402A000993142 /* WhisperTranscriber.app */;
 			productType = "com.apple.product-type.application";
 		};
+		44104DB42DC6F81B00993142 /* WhisperTranscriberLite */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 44104DBD2DC6F81B00993142 /* Build configuration list for PBXNativeTarget "WhisperTranscriberLite" */;
+			buildPhases = (
+				44104DB62DC6F81B00993142 /* Sources */,
+				44104DB72DC6F81B00993142 /* Frameworks */,
+				44104DBB2DC6F81B00993142 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				44104C702DC402A000993142 /* WhisperTranscriber */,
+			);
+			name = WhisperTranscriberLite;
+			packageProductDependencies = (
+				44104DB52DC6F81B00993142 /* WhisperKit */,
+			);
+			productName = WhisperTranscriber;
+			productReference = 44104DC02DC6F81B00993142 /* WhisperTranscriberLite.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -125,12 +189,21 @@
 			projectRoot = "";
 			targets = (
 				44104C6D2DC402A000993142 /* WhisperTranscriber */,
+				44104DB42DC6F81B00993142 /* WhisperTranscriberLite */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		44104C6C2DC402A000993142 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				44104DA02DC6EB9700993142 /* hf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		44104DBB2DC6F81B00993142 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -141,6 +214,13 @@
 
 /* Begin PBXSourcesBuildPhase section */
 		44104C6A2DC402A000993142 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		44104DB62DC6F81B00993142 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -184,6 +264,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 3QYF6TV64Q;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -248,6 +329,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 3QYF6TV64Q;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -273,24 +355,27 @@
 		44104C7B2DC402A200993142 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon.icns;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = WhisperTranscriber/WhisperTranscriber.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 5;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 3QYF6TV64Q;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = WhisperTranscriber/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Whisper Transcriber";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.WhisperTranscriber;
+				PRODUCT_BUNDLE_IDENTIFIER = com.joaoanes.WhisperTranscriber;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -301,26 +386,93 @@
 		44104C7C2DC402A200993142 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon.icns;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = WhisperTranscriber/WhisperTranscriber.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 5;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 3QYF6TV64Q;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = WhisperTranscriber/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Whisper Transcriber";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.WhisperTranscriber;
+				PRODUCT_BUNDLE_IDENTIFIER = com.joaoanes.WhisperTranscriber;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		44104DBE2DC6F81B00993142 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon.icns;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = WhisperTranscriber/WhisperTranscriber.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 5;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 3QYF6TV64Q;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "WhisperTranscriber/lite-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Whisper Transcriber (Lite)";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.joaoanes.WhisperTranscriberLite;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "LITE_MODE DEBUG";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		44104DBF2DC6F81B00993142 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon.icns;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = WhisperTranscriber/WhisperTranscriber.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 5;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 3QYF6TV64Q;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "WhisperTranscriber/lite-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Whisper Transcriber (Lite)";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.joaoanes.WhisperTranscriberLite;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = LITE_MODE;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -347,6 +499,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		44104DBD2DC6F81B00993142 /* Build configuration list for PBXNativeTarget "WhisperTranscriberLite" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				44104DBE2DC6F81B00993142 /* Debug */,
+				44104DBF2DC6F81B00993142 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -358,6 +519,10 @@
 
 /* Begin XCSwiftPackageProductDependency section */
 		44104C7E2DC403F400993142 /* WhisperKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WhisperKit;
+		};
+		44104DB52DC6F81B00993142 /* WhisperKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = WhisperKit;
 		};

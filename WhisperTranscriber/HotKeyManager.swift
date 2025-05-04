@@ -15,7 +15,7 @@ final class HotKeyManager {
     ) {
         handlers[id] = handler
 
-        var hotKeyID = EventHotKeyID(
+        let hotKeyID = EventHotKeyID(
             signature: UTGetOSTypeFromString("SwHK"),
             id: id
         )
@@ -82,13 +82,4 @@ private func hotKeyEventHandler(
     }
 
     return noErr
-}
-
-fileprivate func UTGetOSTypeFromString(_ str: String) -> OSType {
-    precondition(str.utf8.count == 4, "Must be 4 chars")
-    var result: OSType = 0
-    for char in str.utf8 {
-        result = (result << 8) | OSType(char)
-    }
-    return result
 }
