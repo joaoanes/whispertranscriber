@@ -126,9 +126,6 @@ struct IdleRecordingView: View {
                 window.setFrameAutosaveName("Records")
                 window.contentView = NSHostingView(rootView: RecordsView())
                 window.makeKeyAndOrderFront(nil)
-
-                // Ensure the list is fresh when the window is opened
-                RecordingsManager.shared.scanForRecordings()
             }
             
             Button("Quit WhisperTranscriber", action: { NSApp.terminate(nil) })

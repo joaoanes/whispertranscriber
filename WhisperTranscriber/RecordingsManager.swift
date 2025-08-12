@@ -8,9 +8,10 @@ class RecordingsManager: ObservableObject {
     @Published var transcriptions: [URL: String] = [:]
 
     private let fileManager = FileManager.default
-    private var cacheDirectory: URL {
-        // Using the same logic as tempURL() to find the cache directory
-        return fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first!
+    private var cacheDirectory: URL? {
+        // Using a helper to get the app-specific cache directory
+        return try? fileManager.url(for: .cachesDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+            .appendingPathComponent(Bundle.main.bundleIdentifier ?? "com.joaoanes.WhisperTranscriber")
     }
 
     private init() {
@@ -18,6 +19,12 @@ class RecordingsManager: ObservableObject {
     }
 
     func scanForRecordings() {
+        guard let cacheDirectory = cacheDirectory else {
+            print("Error: Could not determine cache directory.")
+            self.recordings = []
+            return
+        }
+
         do {
             let allFiles = try fileManager.contentsOfDirectory(at: cacheDirectory, includingPropertiesForKeys: [.creationDateKey], options: .skipsHiddenFiles)
             // Filter for .wav files and sort by creation date, newest first
@@ -36,10 +43,8 @@ class RecordingsManager: ObservableObject {
 
     func addTranscription(for url: URL, text: String) {
         transcriptions[url] = text
-        // Check if the URL is already in the recordings list, if not, add it and resort
+        // Check if the URL is already in the recordings list, if not, re-scan to add it.
         if !recordings.contains(url) {
-            recordings.insert(url, at: 0) // Assume it's the newest
-            // A full re-scan and sort might be better for consistency
             scanForRecordings()
         }
     }

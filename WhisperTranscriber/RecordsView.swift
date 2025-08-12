@@ -1,66 +1,53 @@
 import SwiftUI
 
 struct RecordsView: View {
-    @StateObject private var recordingsManager = RecordingsManager.shared
-    @StateObject private var vm = RecorderViewModel.shared
+    @StateObject private var viewModel = RecordsViewModel()
 
     var body: some View {
         VStack {
-            if recordingsManager.recordings.isEmpty {
+            if viewModel.displayableRecordings.isEmpty {
                 Text("No recordings yet")
                     .font(.headline)
                     .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                List(recordingsManager.recordings, id: \.self) { url in
+                List(viewModel.displayableRecordings) { recording in
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(url.lastPathComponent)
+                        Text(recording.fileName)
                             .font(.headline)
 
-                        if let creationDate = getCreationDate(for: url) {
-                            Text(creationDate, style: .dateTime)
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
+                        Text(recording.creationDate)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
 
-                        if let transcription = recordingsManager.transcriptions[url] {
+                        if let transcription = recording.transcription {
                             Text(transcription)
                                 .font(.body)
                                 .lineLimit(3)
                         } else {
                             Text("Transcription not available for this session.")
-                                .font(.body)
+                                .italic()
                                 .foregroundColor(.secondary)
                         }
 
                         Button("Re-transcribe") {
-                            vm.retranscribe(url: url)
+                            viewModel.retranscribe(recording: recording)
                         }
-                        .disabled(vm.isTranscribing)
+                        .disabled(viewModel.isTranscribing)
                     }
                     .padding(.vertical, 4)
                 }
             }
 
             Button("Refresh List") {
-                recordingsManager.scanForRecordings()
+                viewModel.refresh()
             }
             .padding()
         }
         .onAppear {
-            recordingsManager.scanForRecordings()
+            viewModel.refresh()
         }
         .frame(minWidth: 400, minHeight: 400)
-    }
-
-    private func getCreationDate(for url: URL) -> Date? {
-        do {
-            let values = try url.resourceValues(forKeys: [.creationDateKey])
-            return values.creationDate
-        } catch {
-            print("Error getting creation date for \(url.path): \(error)")
-            return nil
-        }
     }
 }
 
