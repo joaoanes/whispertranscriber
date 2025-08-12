@@ -12,31 +12,10 @@ struct RecordsView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List(viewModel.displayableRecordings) { recording in
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(recording.fileName)
-                            .font(.headline)
-
-                        Text(recording.creationDate)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-
-                        if let transcription = recording.transcription {
-                            Text(transcription)
-                                .font(.body)
-                                .lineLimit(3)
-                                .textSelection(.enabled)
-                        } else {
-                            Text("Transcription not available for this session.")
-                                .italic()
-                                .foregroundColor(.secondary)
-                        }
-
-                        Button("Re-transcribe") {
-                            viewModel.retranscribe(recording: recording)
-                        }
-                        .disabled(viewModel.isTranscribing)
+                    RecordingRowView(recording: recording) {
+                        viewModel.retranscribe(recording: recording)
                     }
-                    .padding(.vertical, 4)
+                    .disabled(viewModel.isTranscribing)
                 }
             }
 
