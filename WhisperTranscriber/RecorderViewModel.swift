@@ -92,7 +92,7 @@ class RecorderViewModel: ObservableObject {
         return appCacheURL
     }
 
-    private func getTokenizerVariant(for model: String) -> TokenizerVariant {
+    private func getTokenizerVariant(for model: String) -> ModelVariant {
         if model.contains("large-v3") {
             return .largev3
         } else if model.contains("large-v2") {
