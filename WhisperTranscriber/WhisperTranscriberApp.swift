@@ -19,7 +19,6 @@ struct WhisperTranscriberApp: App {
             WhisperTranscriberView()
         } label: {
             Image(nsImage: tintedImage(named: "icon", color: getForegroundColor(vm: vm)))
-                .accessibilityLabel(Text("WhisperTranscriber"))
         }
         .menuBarExtraStyle(.window)
     }
