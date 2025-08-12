@@ -135,6 +135,10 @@ struct IdleRecordingView: View {
                 .disabled(true)
             
             Divider()
+
+            Button("Records") {
+                RecordsWindowController.shared.showWindow()
+            }
             
             Button("Quit WhisperTranscriber", action: { NSApp.terminate(nil) })
                 .keyboardShortcut("Q")
@@ -165,5 +169,3 @@ struct WhisperTranscriberView_Previews: PreviewProvider {
         }
     }
 }
-
-
