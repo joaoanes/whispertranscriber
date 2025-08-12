@@ -55,13 +55,19 @@ class RecorderViewModel: ObservableObject {
     private func setupLiteModels() async throws -> String {
         let fm = FileManager.default
         let cacheURL = try getCacheDirectory()
-        let modelPathURL = cacheURL.appendingPathComponent("hf/models/argmaxinc/whisperkit-coreml/\(SettingsManager.shared.selectedModel)")
+        let selectedModel = SettingsManager.shared.selectedModel
+        let modelPathURL = cacheURL.appendingPathComponent("hf/models/argmaxinc/whisperkit-coreml/\(selectedModel)")
         let tokenizerPathURL = cacheURL.appendingPathComponent("hf/")
         
-        let components = SettingsManager.shared.selectedModel.components(separatedBy: "_")
-        let modelName = components.count > 1 ? components[1].replacingOccurrences(of: "whisper-", with: "") : "large-v3"
+        let configPath: String
+        if selectedModel.starts(with: "distil-whisper") {
+            let modelName = selectedModel.replacingOccurrences(of: "distil-whisper_", with: "")
+            configPath = tokenizerPathURL.appendingPathComponent("models/distil-whisper/\(modelName)/config.json").path
+        } else {
+            let modelName = selectedModel.replacingOccurrences(of: "openai_", with: "").components(separatedBy: "_").first ?? "whisper-large-v3"
+            configPath = tokenizerPathURL.appendingPathComponent("models/openai/\(modelName)/config.json").path
+        }
 
-        let configPath = tokenizerPathURL.appendingPathComponent("models/openai/whisper-\(modelName)/config.json").path
         if fm.fileExists(atPath: configPath) {
             print("✅ Models already exist at", modelPathURL.path)
             return modelPathURL.path
@@ -86,6 +92,26 @@ class RecorderViewModel: ObservableObject {
         return appCacheURL
     }
 
+    private func getTokenizerVariant(for model: String) -> TokenizerVariant {
+        if model.contains("large-v3") {
+            return .largev3
+        } else if model.contains("large-v2") {
+            return .largev2
+        } else if model.contains("medium") {
+            return .medium
+        } else if model.contains("small") {
+            return .small
+        } else if model.contains("base") {
+            return .base
+        } else if model.contains("tiny") {
+            return .tiny
+        } else if model.contains("distil-large-v3") {
+            return .largev3
+        } else {
+            return .largev3
+        }
+    }
+
     private func downloadAndInstallModels(to modelURL: URL, tokenizerPath: URL, fileManager fm: FileManager) async throws {
         // Download model
         let downloadedModelURL = try await WhisperKit.download(variant: SettingsManager.shared.selectedModel) { progress in
@@ -94,9 +120,7 @@ class RecorderViewModel: ObservableObject {
             }
         }
         
-        let components = SettingsManager.shared.selectedModel.components(separatedBy: "_")
-        let modelName = components.count > 1 ? components[1].replacingOccurrences(of: "whisper-", with: "") : "large-v3"
-        let tokenizerVariant = WhisperKit.tokenizerVariant(for: modelName)
+        let tokenizerVariant = getTokenizerVariant(for: SettingsManager.shared.selectedModel)
 
         // Download tokenizer
         _ = try await loadTokenizer(for: tokenizerVariant, tokenizerFolder: tokenizerPath, useBackgroundSession: false)
