@@ -102,16 +102,17 @@ struct IdleRecordingView: View {
             }
             .frame(width: 80, height: 22)
             
+            Text("Suffix:")
+                .font(.subheadline)
+                .disabled(true)
+
+            TextField("Enter suffix", text: $settings.suffix)
+                .background(Color(NSColor.controlBackgroundColor))
+                .multilineTextAlignment(.center)
+                .frame(width: 80, height: 22)
+
             DisclosureGroup("Advanced") {
                 VStack {
-                    Text("Suffix:")
-                        .font(.subheadline)
-                        .disabled(true)
-
-                    TextField("Enter suffix", text: $settings.suffix)
-                        .background(Color(NSColor.controlBackgroundColor))
-                        .multilineTextAlignment(.center)
-                        .frame(width: 80, height: 22)
 
                     Text("Model:")
                         .font(.subheadline)

@@ -24,7 +24,7 @@ struct RecordsView: View {
             }
             .padding()
 
-            Text("Watching folder: \(viewModel.recordingsManager.cacheDirectory.path)")
+            Text("Watching folder: \(viewModel.recordingsManager.cacheDirectory?.path() ?? "no path found")")
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .padding(.bottom, 8)
