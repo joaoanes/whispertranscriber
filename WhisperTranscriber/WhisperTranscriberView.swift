@@ -2,10 +2,7 @@ import SwiftUI
 
 struct WhisperTranscriberView: View {
     @StateObject private var vm = RecorderViewModel.shared
-    @AppStorage("toggleHotkey") private var hotkey = "⌥⌘S"
-    @AppStorage("transcriptionSuffix") private var suffix = ""
-    
-    var registerShortcut: (String) -> Bool
+    @ObservedObject private var settings = SettingsManager.shared
     
     var body: some View {
         ZStack {
@@ -19,14 +16,22 @@ struct WhisperTranscriberView: View {
                 PrewarmingView(isDownloading: vm.isDownloading, downloadProgress: vm.downloadProgress)
             } else {
                 IdleRecordingView(
-                    hotkey: $hotkey,
-                    suffix: $suffix,
-                    registerShortcut: registerShortcut,
+                    settings: settings,
                     isRecording: vm.isRecording,
                     isTranscribing:
                         vm.isTranscribing
                 )
             }
+        }
+        .alert(isPresented: Binding(
+            get: { vm.errorMessage != nil },
+            set: { if !$0 { vm.errorMessage = nil } }
+        )) {
+            Alert(
+                title: Text("Error"),
+                message: Text(vm.errorMessage ?? "An unexpected error occurred."),
+                dismissButton: .default(Text("OK"))
+            )
         }
     }
 }
@@ -64,9 +69,7 @@ struct PrewarmingView: View {
 }
 
 struct IdleRecordingView: View {
-    @Binding var hotkey: String
-    @Binding var suffix: String
-    var registerShortcut: (String) -> Bool
+    @ObservedObject var settings: SettingsManager
     var isRecording: Bool
     var isTranscribing: Bool
 
@@ -88,12 +91,12 @@ struct IdleRecordingView: View {
                 .font(.subheadline)
                 .disabled(true)
             
-            HotkeyRecorderView(chord: $hotkey) { newChord in
-                let old = hotkey
-                hotkey = newChord
-                if !registerShortcut(newChord) {
-                    hotkey = old
-                    _ = registerShortcut(old)
+            HotkeyRecorderView(chord: $settings.hotkey) { newChord in
+                let old = settings.hotkey
+                settings.hotkey = newChord
+                if !HotKeyManager.shared.register(chord: newChord, handler: { Task { @MainActor in RecorderViewModel.shared.toggleRecording() } }) {
+                    settings.hotkey = old
+                    _ = HotKeyManager.shared.register(chord: old, handler: { Task { @MainActor in RecorderViewModel.shared.toggleRecording() } })
                 }
             }
             .frame(width: 80, height: 22)
@@ -102,7 +105,7 @@ struct IdleRecordingView: View {
                 .font(.subheadline)
                 .disabled(true)
             
-            TextField("Enter suffix", text: $suffix)
+            TextField("Enter suffix", text: $settings.suffix)
                 .background(Color(NSColor.controlBackgroundColor))
                 .multilineTextAlignment(.center)
                 .frame(width: 80, height: 22)
@@ -132,9 +135,7 @@ struct WhisperTranscriberView_Previews: PreviewProvider {
                 .fixedSize()
             
             IdleRecordingView(
-                hotkey: .constant("⌥⌘S"),
-                suffix: .constant(""),
-                registerShortcut: { _ in true },
+                settings: SettingsManager.shared,
                 isRecording: false,
                 isTranscribing: false
             )
