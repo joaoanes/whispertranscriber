@@ -43,6 +43,11 @@ struct RecordsView: View {
                 viewModel.refresh()
             }
             .padding()
+
+            Text("Watching folder: \(viewModel.recordingsManager.cacheDirectory.path)")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .padding(.bottom, 8)
         }
         .onAppear {
             viewModel.refresh()

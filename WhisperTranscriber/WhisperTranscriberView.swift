@@ -157,5 +157,3 @@ struct WhisperTranscriberView_Previews: PreviewProvider {
         }
     }
 }
-
-

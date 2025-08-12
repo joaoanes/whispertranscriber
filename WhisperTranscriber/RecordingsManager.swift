@@ -8,10 +8,9 @@ class RecordingsManager: ObservableObject {
     @Published var transcriptions: [URL: String] = [:]
 
     private let fileManager = FileManager.default
-    private var cacheDirectory: URL? {
-        // Using a helper to get the app-specific cache directory
-        return try? fileManager.url(for: .cachesDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-            .appendingPathComponent(Bundle.main.bundleIdentifier ?? "com.joaoanes.WhisperTranscriber")
+    var cacheDirectory: URL {
+        // Recordings are saved to the root of the caches directory.
+        return fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first!
     }
 
     private init() {

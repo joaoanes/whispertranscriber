@@ -12,7 +12,7 @@ struct DisplayableRecording: Identifiable, Hashable {
 class RecordsViewModel: ObservableObject {
     @Published var displayableRecordings: [DisplayableRecording] = []
 
-    private let recordingsManager = RecordingsManager.shared
+    let recordingsManager = RecordingsManager.shared
     private let recorderViewModel = RecorderViewModel.shared
 
     private var cancellables = Set<AnyCancellable>()
@@ -35,7 +35,9 @@ class RecordsViewModel: ObservableObject {
                     )
                 }
             }
-            .assign(to: \.displayableRecordings, on: self)
+            .sink { [weak self] displayableRecordings in
+                self?.displayableRecordings = displayableRecordings
+            }
             .store(in: &cancellables)
     }
 
