@@ -18,9 +18,14 @@ struct WhisperTranscriberApp: App {
         MenuBarExtra {
             WhisperTranscriberView()
         } label: {
-            Label("WhisperTranscriber", systemImage: "mic.fill")
-                .labelStyle(.iconOnly)
-                .foregroundStyle(getForegroundColor(vm: vm))
+            Label {
+                Text("WhisperTranscriber")
+            } icon: {
+                Image("icon")
+                    .renderingMode(.template)
+            }
+            .labelStyle(.iconOnly)
+            .foregroundStyle(getForegroundColor(vm: vm))
         }
         .menuBarExtraStyle(.window)
     }
