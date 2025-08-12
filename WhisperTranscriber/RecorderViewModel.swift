@@ -38,17 +38,22 @@ class RecorderViewModel: ObservableObject {
         } catch {
             print("❌ Error during pre-warming:", error)
             errorMessage = "Error during pre-warming: \(error.localizedDescription)"
+            isPrewarming = false
         }
     }
     
     private func ensureModelsAreThere() async throws -> String {
+        let selectedModel = SettingsManager.shared.selectedModel
         #if LITE_MODE
         return try await setupLiteModels()
         #else
-        guard let basePath = Bundle.main.resourceURL?.appendingPathComponent("hf/models/argmaxinc/whisperkit-coreml/\(SettingsManager.shared.selectedModel)") else {
-            throw NSError(domain: "AppError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Could not find models path in bundle."])
+        if let bundlePath = Bundle.main.resourceURL?.appendingPathComponent("hf/models/argmaxinc/whisperkit-coreml/\(selectedModel)") {
+             if FileManager.default.fileExists(atPath: bundlePath.path) {
+                 print("✅ Found models in app bundle at", bundlePath.path)
+                 return bundlePath.path
+             }
         }
-        return basePath.path
+        return try await setupLiteModels()
         #endif
     }
 
