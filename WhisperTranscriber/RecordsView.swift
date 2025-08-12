@@ -24,6 +24,7 @@ struct RecordsView: View {
                             Text(transcription)
                                 .font(.body)
                                 .lineLimit(3)
+                                .textSelection(.enabled)
                         } else {
                             Text("Transcription not available for this session.")
                                 .italic()
