@@ -19,7 +19,6 @@ struct WhisperTranscriberApp: App {
             WhisperTranscriberView()
         } label: {
             Image(nsImage: tintedImage(named: "icon", color: getForegroundColor(vm: vm)))
-                .accessibilityLabel(Text("WhisperTranscriber"))
         }
         .menuBarExtraStyle(.window)
     }
@@ -37,14 +36,13 @@ private extension WhisperTranscriberApp {
         case vm.isRecording:
             return .orange // actively recording
         default:
-            return Color(NSColor.textColor)
+            return .white
         }
     }
 
     func tintedImage(named name: String, color: Color) -> NSImage {
         let nsColor = NSColor(color)
         guard let image = NSImage(named: name)?.copy() as? NSImage else { return NSImage() }
-        image.isTemplate = true
         image.lockFocus()
         nsColor.set()
         let imageRect = NSRect(origin: .zero, size: image.size)
