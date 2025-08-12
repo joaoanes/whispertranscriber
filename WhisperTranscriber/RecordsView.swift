@@ -12,35 +12,33 @@ struct RecordsView: View {
                     .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                List {
-                    ForEach(recordingsManager.recordings, id: \.self) { url in
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(url.lastPathComponent)
-                                .font(.headline)
+                List(recordingsManager.recordings, id: \.self) { url in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(url.lastPathComponent)
+                            .font(.headline)
 
-                            if let creationDate = getCreationDate(for: url) {
-                                Text(creationDate, style: .dateTime)
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
-
-                            if let transcription = recordingsManager.transcriptions[url] {
-                                Text(transcription)
-                                    .font(.body)
-                                    .lineLimit(3)
-                            } else {
-                                Text("Transcription not available for this session.")
-                                    .font(.body)
-                                    .foregroundColor(.secondary)
-                            }
-
-                            Button("Re-transcribe") {
-                                vm.retranscribe(url: url)
-                            }
-                            .disabled(vm.isTranscribing)
+                        if let creationDate = getCreationDate(for: url) {
+                            Text(creationDate, style: .dateTime)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
                         }
-                        .padding(.vertical, 4)
+
+                        if let transcription = recordingsManager.transcriptions[url] {
+                            Text(transcription)
+                                .font(.body)
+                                .lineLimit(3)
+                        } else {
+                            Text("Transcription not available for this session.")
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                        }
+
+                        Button("Re-transcribe") {
+                            vm.retranscribe(url: url)
+                        }
+                        .disabled(vm.isTranscribing)
                     }
+                    .padding(.vertical, 4)
                 }
             }
 
