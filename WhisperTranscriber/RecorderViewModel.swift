@@ -59,16 +59,7 @@ class RecorderViewModel: ObservableObject {
         let modelPathURL = cacheURL.appendingPathComponent("hf/models/argmaxinc/whisperkit-coreml/\(selectedModel)")
         let tokenizerPathURL = cacheURL.appendingPathComponent("hf/")
         
-        let configPath: String
-        if selectedModel.starts(with: "distil-whisper") {
-            let modelName = selectedModel.replacingOccurrences(of: "distil-whisper_", with: "")
-            configPath = tokenizerPathURL.appendingPathComponent("models/distil-whisper/\(modelName)/config.json").path
-        } else {
-            let modelName = selectedModel.replacingOccurrences(of: "openai_", with: "").components(separatedBy: "_").first ?? "whisper-large-v3"
-            configPath = tokenizerPathURL.appendingPathComponent("models/openai/\(modelName)/config.json").path
-        }
-
-        if fm.fileExists(atPath: configPath) {
+        if fm.fileExists(atPath: modelPathURL.path) {
             print("✅ Models already exist at", modelPathURL.path)
             return modelPathURL.path
         }
@@ -92,7 +83,7 @@ class RecorderViewModel: ObservableObject {
         return appCacheURL
     }
 
-    private func getTokenizerVariant(for model: String) -> ModelVariant {
+    private func getTokenizerVariant(for model: String) -> TokenizerVariant {
         if model.contains("large-v3") {
             return .largev3
         } else if model.contains("large-v2") {

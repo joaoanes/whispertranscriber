@@ -70,7 +70,6 @@ struct PrewarmingView: View {
 
 struct IdleRecordingView: View {
     @ObservedObject var settings: SettingsManager
-    @StateObject private var vm = RecorderViewModel.shared
     var isRecording: Bool
     var isTranscribing: Bool
 
