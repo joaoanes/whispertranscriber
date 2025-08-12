@@ -70,6 +70,7 @@ struct PrewarmingView: View {
 
 struct IdleRecordingView: View {
     @ObservedObject var settings: SettingsManager
+    @StateObject private var vm = RecorderViewModel.shared
     var isRecording: Bool
     var isTranscribing: Bool
 
@@ -101,14 +102,34 @@ struct IdleRecordingView: View {
             }
             .frame(width: 80, height: 22)
             
-            Text("Suffix:")
-                .font(.subheadline)
-                .disabled(true)
-            
-            TextField("Enter suffix", text: $settings.suffix)
-                .background(Color(NSColor.controlBackgroundColor))
-                .multilineTextAlignment(.center)
-                .frame(width: 80, height: 22)
+            DisclosureGroup("Advanced") {
+                VStack {
+                    Text("Suffix:")
+                        .font(.subheadline)
+                        .disabled(true)
+
+                    TextField("Enter suffix", text: $settings.suffix)
+                        .background(Color(NSColor.controlBackgroundColor))
+                        .multilineTextAlignment(.center)
+                        .frame(width: 80, height: 22)
+
+                    Text("Model:")
+                        .font(.subheadline)
+                        .disabled(true)
+
+                    Picker("Model", selection: $settings.selectedModel) {
+                        ForEach(AvailableModels.modelNames, id: \.self) { model in
+                            Text(model).tag(model)
+                        }
+                    }
+                    .onChange(of: settings.selectedModel) {
+                        Task {
+                            await vm.reinitWhisperKit()
+                        }
+                    }
+                    .labelsHidden()
+                }
+            }
             
             Text(statusText())
                 .disabled(true)

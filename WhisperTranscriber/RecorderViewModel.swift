@@ -21,39 +21,50 @@ class RecorderViewModel: ObservableObject {
     
     private init() {
         Task {
-            do {
-                let modelsPath = try await ensureModelsAreThere()
-                let config = WhisperKitConfig(modelFolder: modelsPath, logLevel: .debug, prewarm: true, load: true, download: false)
-                whisperKit = try await WhisperKit(config)
+            await reinitWhisperKit()
+        }
+    }
 
-                isPrewarming = false
-                print("✅ Pre-warming complete")
-            } catch {
-                print("❌ Error during pre-warming:", error)
-                errorMessage = "Error during pre-warming: \(error.localizedDescription)"
-            }
+    func reinitWhisperKit() async {
+        isPrewarming = true
+        whisperKit = nil
+        do {
+            let modelsPath = try await ensureModelsAreThere()
+            let config = WhisperKitConfig(modelFolder: modelsPath, logLevel: .debug, prewarm: true, load: true, download: false)
+            whisperKit = try await WhisperKit(config)
+
+            isPrewarming = false
+            print("✅ Pre-warming complete")
+        } catch {
+            print("❌ Error during pre-warming:", error)
+            errorMessage = "Error during pre-warming: \(error.localizedDescription)"
+            isPrewarming = false
         }
     }
     
     private func ensureModelsAreThere() async throws -> String {
+        let selectedModel = SettingsManager.shared.selectedModel
         #if LITE_MODE
         return try await setupLiteModels()
         #else
-        guard let basePath = Bundle.main.resourceURL?.appendingPathComponent("hf/models/argmaxinc/whisperkit-coreml/openai_whisper-large-v3-v20240930") else {
-            throw NSError(domain: "AppError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Could not find models path in bundle."])
+        if let bundlePath = Bundle.main.resourceURL?.appendingPathComponent("hf/models/argmaxinc/whisperkit-coreml/\(selectedModel)") {
+             if FileManager.default.fileExists(atPath: bundlePath.path) {
+                 print("✅ Found models in app bundle at", bundlePath.path)
+                 return bundlePath.path
+             }
         }
-        return basePath.path
+        return try await setupLiteModels()
         #endif
     }
 
     private func setupLiteModels() async throws -> String {
         let fm = FileManager.default
         let cacheURL = try getCacheDirectory()
-        let modelPathURL = cacheURL.appendingPathComponent("hf/models/argmaxinc/whisperkit-coreml/openai_whisper-large-v3-v20240930")
+        let selectedModel = SettingsManager.shared.selectedModel
+        let modelPathURL = cacheURL.appendingPathComponent("hf/models/argmaxinc/whisperkit-coreml/\(selectedModel)")
         let tokenizerPathURL = cacheURL.appendingPathComponent("hf/")
         
-        let configPath = tokenizerPathURL.appendingPathComponent("models/openai/whisper-large-v3/config.json").path
-        if fm.fileExists(atPath: configPath) {
+        if fm.fileExists(atPath: modelPathURL.path) {
             print("✅ Models already exist at", modelPathURL.path)
             return modelPathURL.path
         }
@@ -77,16 +88,38 @@ class RecorderViewModel: ObservableObject {
         return appCacheURL
     }
 
+    private func getTokenizerVariant(for model: String) -> ModelVariant {
+        if model.contains("large-v3") {
+            return .largev3
+        } else if model.contains("large-v2") {
+            return .largev2
+        } else if model.contains("medium") {
+            return .medium
+        } else if model.contains("small") {
+            return .small
+        } else if model.contains("base") {
+            return .base
+        } else if model.contains("tiny") {
+            return .tiny
+        } else if model.contains("distil-large-v3") {
+            return .largev3
+        } else {
+            return .largev3
+        }
+    }
+
     private func downloadAndInstallModels(to modelURL: URL, tokenizerPath: URL, fileManager fm: FileManager) async throws {
         // Download model
-        let downloadedModelURL = try await WhisperKit.download(variant: "openai_whisper-large-v3-v20240930") { progress in
+        let downloadedModelURL = try await WhisperKit.download(variant: SettingsManager.shared.selectedModel) { progress in
             DispatchQueue.main.async {
                 self.downloadProgress = progress.fractionCompleted
             }
         }
         
+        let tokenizerVariant = getTokenizerVariant(for: SettingsManager.shared.selectedModel)
+
         // Download tokenizer
-        _ = try await loadTokenizer(for: .largev3, tokenizerFolder: tokenizerPath, useBackgroundSession: false)
+        _ = try await loadTokenizer(for: tokenizerVariant, tokenizerFolder: tokenizerPath, useBackgroundSession: false)
         
         // Move model to cache
         if fm.fileExists(atPath: modelURL.path) {
