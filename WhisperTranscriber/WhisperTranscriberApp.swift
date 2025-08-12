@@ -18,14 +18,8 @@ struct WhisperTranscriberApp: App {
         MenuBarExtra {
             WhisperTranscriberView()
         } label: {
-            Label {
-                Text("WhisperTranscriber")
-            } icon: {
-                Image("icon")
-                    .renderingMode(.template)
-            }
-            .labelStyle(.iconOnly)
-            .foregroundStyle(getForegroundColor(vm: vm))
+            Image(nsImage: tintedImage(named: "icon", color: getForegroundColor(vm: vm)))
+                .accessibilityLabel(Text("WhisperTranscriber"))
         }
         .menuBarExtraStyle(.window)
     }
@@ -43,7 +37,19 @@ private extension WhisperTranscriberApp {
         case vm.isRecording:
             return .orange // actively recording
         default:
-            return .primary // idle
+            return Color(NSColor.textColor)
         }
+    }
+
+    func tintedImage(named name: String, color: Color) -> NSImage {
+        let nsColor = NSColor(color)
+        guard let image = NSImage(named: name)?.copy() as? NSImage else { return NSImage() }
+        image.isTemplate = true
+        image.lockFocus()
+        nsColor.set()
+        let imageRect = NSRect(origin: .zero, size: image.size)
+        imageRect.fill(using: .sourceAtop)
+        image.unlockFocus()
+        return image
     }
 }
