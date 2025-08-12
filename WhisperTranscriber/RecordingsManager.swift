@@ -8,9 +8,9 @@ class RecordingsManager: ObservableObject {
     @Published var transcriptions: [URL: String] = [:]
 
     private let fileManager = FileManager.default
-    var cacheDirectory: URL {
+    var cacheDirectory: URL? {
         // Recordings are saved to the root of the caches directory.
-        return fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first!
+        return fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first
     }
 
     private init() {
