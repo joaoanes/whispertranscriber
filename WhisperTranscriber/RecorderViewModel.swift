@@ -166,9 +166,35 @@ class RecorderViewModel: ObservableObject {
                 print("📝 Transcription:", text)
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(lastTranscript, forType: .string)
+
+                // Add to our in-memory cache
+                RecordingsManager.shared.addTranscription(for: url, text: lastTranscript)
             } catch {
                 print("❌ Transcription error:", error)
                 errorMessage = "Transcription error: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    func retranscribe(url: URL) {
+        Task {
+            isTranscribing = true
+            defer { isTranscribing = false }
+            guard let kit = whisperKit else {
+                print("❌ WhisperKit not ready")
+                return
+            }
+            do {
+                let results = try await kit.transcribe(audioPath: url.path)
+                let text = results.first?.text ?? ""
+                let transcript = text + SettingsManager.shared.suffix
+                print("📝 Re-transcription:", transcript)
+
+                // Add to our in-memory cache
+                RecordingsManager.shared.addTranscription(for: url, text: transcript)
+            } catch {
+                print("❌ Re-transcription error:", error)
+                errorMessage = "Re-transcription error: \(error.localizedDescription)"
             }
         }
     }

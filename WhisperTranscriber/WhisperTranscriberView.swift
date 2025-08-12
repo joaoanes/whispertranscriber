@@ -114,6 +114,22 @@ struct IdleRecordingView: View {
                 .disabled(true)
             
             Divider()
+
+            Button("Records") {
+                let window = NSWindow(
+                    contentRect: NSRect(x: 0, y: 0, width: 400, height: 500),
+                    styleMask: [.titled, .closable, .resizable, .miniaturizable],
+                    backing: .buffered,
+                    defer: false
+                )
+                window.center()
+                window.setFrameAutosaveName("Records")
+                window.contentView = NSHostingView(rootView: RecordsView())
+                window.makeKeyAndOrderFront(nil)
+
+                // Ensure the list is fresh when the window is opened
+                RecordingsManager.shared.scanForRecordings()
+            }
             
             Button("Quit WhisperTranscriber", action: { NSApp.terminate(nil) })
                 .keyboardShortcut("Q")
