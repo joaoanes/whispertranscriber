@@ -65,3 +65,8 @@ fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
 .aider*
+
+# PyInstaller
+build/
+dist/
+*.spec
