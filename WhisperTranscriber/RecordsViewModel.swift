@@ -26,29 +26,33 @@ class RecordsViewModel: ObservableObject {
 
         recordingsManager.$recordings
             .combineLatest(recordingsManager.$transcriptions)
-            .map { [weak self] urls, transcriptions in
-                guard let self = self else { return [] }
-                return urls.map { url in
+            .map { urls, transcriptions in
+                urls.map { url in
                     let creationDate = (try? url.resourceValues(forKeys: [.creationDateKey]))?.creationDate ?? Date()
-                    let duration = self.getAudioDuration(for: url) ?? "0:00"
                     return DisplayableRecording(
                         id: url,
                         fileName: url.lastPathComponent,
                         creationDate: dateFormatter.string(from: creationDate),
-                        duration: duration,
+                        duration: "…",
                         transcription: transcriptions[url]
                     )
                 }
             }
             .sink { [weak self] displayableRecordings in
                 self?.displayableRecordings = displayableRecordings
+                self?.updateDurations()
             }
             .store(in: &cancellables)
     }
 
-    private func getAudioDuration(for url: URL) -> String? {
+    private func getAudioDuration(for url: URL) async -> String? {
         let asset = AVURLAsset(url: url)
-        let duration = asset.duration
+        let duration: CMTime
+        do {
+            duration = try await asset.load(.duration)
+        } catch {
+            return nil
+        }
         let durationInSeconds = CMTimeGetSeconds(duration)
 
         if durationInSeconds.isNaN || durationInSeconds.isInfinite {
@@ -59,6 +63,25 @@ class RecordsViewModel: ObservableObject {
         let seconds = Int(durationInSeconds) % 60
 
         return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    private func updateDurations() {
+        Task {
+            for (index, recording) in displayableRecordings.enumerated() {
+                async let duration = getAudioDuration(for: recording.id)
+                if let duration = await duration {
+                    DispatchQueue.main.async {
+                        self.displayableRecordings[index] = .init(
+                            id: recording.id,
+                            fileName: recording.fileName,
+                            creationDate: recording.creationDate,
+                            duration: duration,
+                            transcription: recording.transcription
+                        )
+                    }
+                }
+            }
+        }
     }
 
     var isTranscribing: Bool {
