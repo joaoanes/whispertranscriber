@@ -5,14 +5,11 @@ struct LogView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 4) {
-                ForEach(logStore.logMessages, id: \.self) { message in
-                    Text(message)
-                        .font(.system(.body, design: .monospaced))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-            .padding()
+            Text(logStore.logMessages.joined())
+                .font(.system(.body, design: .monospaced))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .textSelection(.enabled)
         }
         .frame(minWidth: 600, minHeight: 400)
     }
