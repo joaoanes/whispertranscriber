@@ -8,6 +8,9 @@ struct WhisperTranscriberApp: App {
     @StateObject private var logStore = LogStore.shared
 
     init() {
+        // By accessing LogStore.shared here, we ensure its init() runs
+        // before anything else in this init() method.
+        let _ = LogStore.shared
         HotKeyManager.shared.register(chord: settings.hotkey) {
             Task { @MainActor in
                 RecorderViewModel.shared.toggleRecording()

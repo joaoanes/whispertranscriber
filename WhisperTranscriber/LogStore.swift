@@ -21,10 +21,20 @@ class LogStore: ObservableObject {
         dup2(pipe.fileHandleForWriting.fileDescriptor, STDERR_FILENO)
 
         pipe.fileHandleForReading.readabilityHandler = { [weak self] fileHandle in
+            guard let self = self else { return }
             let data = fileHandle.availableData
+
+            // Write the data back to the original stdout
+            var dataCopy = data
+            dataCopy.withUnsafeMutableBytes { (ptr: UnsafeMutableRawBufferPointer) in
+                if let baseAddress = ptr.baseAddress {
+                    write(self.originalStdout, baseAddress, data.count)
+                }
+            }
+
             if let string = String(data: data, encoding: .utf8) {
                 DispatchQueue.main.async {
-                    self?.logMessages.append(string)
+                    self.logMessages.append(string)
                 }
             }
         }
