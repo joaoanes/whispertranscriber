@@ -20,6 +20,11 @@ struct WhisperTranscriberApp: App {
 
     var body: some Scene {
         MenuBarExtra {
+            Text(statusText(vm: vm))
+                .disabled(true)
+            Text("Shortcut: \(settings.hotkey)")
+                .disabled(true)
+            Divider()
             Button("Settings...") {
                 SettingsWindowController.shared.showWindow()
             }
@@ -60,6 +65,22 @@ private extension WhisperTranscriberApp {
 }
 
 private extension WhisperTranscriberApp {
+    func statusText(vm: RecorderViewModel) -> String {
+        if vm.isDownloading {
+            return "Downloading model..."
+        }
+        if vm.isPrewarming {
+            return "Loading model..."
+        }
+        if vm.isTranscribing {
+            return "🔄 Transcribing..."
+        }
+        if vm.isRecording {
+            return "🛑 Recording..."
+        }
+        return "▶️ Idle"
+    }
+
     func getForegroundColor(vm: RecorderViewModel) -> Color {
         switch true {
         case vm.isDownloading:
