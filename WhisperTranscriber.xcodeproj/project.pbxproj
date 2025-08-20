@@ -14,6 +14,9 @@
 		44104DB82DC6F81B00993142 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 44104C8B2DC4111700993142 /* AudioToolbox.framework */; };
 		44104DB92DC6F81B00993142 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 44104C8C2DC4111700993142 /* AudioUnit.framework */; };
 		44104DBA2DC6F81B00993142 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 44104DB52DC6F81B00993142 /* WhisperKit */; };
+		442021E52DC7E9E800993142 /* LogStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 442021E42DC7E9E800993142 /* LogStore.swift */; };
+		442021E72DC7E9E800993142 /* LogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 442021E62DC7E9E800993142 /* LogView.swift */; };
+		442021E92DC7E9E800993142 /* LogWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 442021E82DC7E9E800993142 /* LogWindowController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -22,6 +25,9 @@
 		44104C8C2DC4111700993142 /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
 		44104D9F2DC6EB9700993142 /* hf */ = {isa = PBXFileReference; lastKnownFileType = folder; name = hf; path = ../../Documents/hf; sourceTree = "<group>"; };
 		44104DC02DC6F81B00993142 /* WhisperTranscriberLite.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WhisperTranscriberLite.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		442021E42DC7E9E800993142 /* LogStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogStore.swift; sourceTree = "<group>"; };
+		442021E62DC7E9E800993142 /* LogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogView.swift; sourceTree = "<group>"; };
+		442021E82DC7E9E800993142 /* LogWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogWindowController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -46,6 +52,11 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		44104C702DC402A000993142 /* WhisperTranscriber */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			children = (
+				442021E42DC7E9E800993142 /* LogStore.swift */,
+				442021E62DC7E9E800993142 /* LogView.swift */,
+				442021E82DC7E9E800993142 /* LogWindowController.swift */,
+			);
 			exceptions = (
 				44104CFE2DC6D2AA00993142 /* Exceptions for "WhisperTranscriber" folder in "WhisperTranscriber" target */,
 				44104DC12DC6F81B00993142 /* Exceptions for "WhisperTranscriber" folder in "WhisperTranscriberLite" target */,
@@ -217,6 +228,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				442021E52DC7E9E800993142 /* LogStore.swift in Sources */,
+				442021E72DC7E9E800993142 /* LogView.swift in Sources */,
+				442021E92DC7E9E800993142 /* LogWindowController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -224,6 +238,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				442021E52DC7E9E800993142 /* LogStore.swift in Sources */,
+				442021E72DC7E9E800993142 /* LogView.swift in Sources */,
+				442021E92DC7E9E800993142 /* LogWindowController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

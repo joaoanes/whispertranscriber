@@ -5,6 +5,7 @@ import Carbon
 struct WhisperTranscriberApp: App {
     @StateObject private var vm = RecorderViewModel.shared
     @StateObject private var settings = SettingsManager.shared
+    @StateObject private var logStore = LogStore.shared
 
     init() {
         HotKeyManager.shared.register(chord: settings.hotkey) {
@@ -21,6 +22,21 @@ struct WhisperTranscriberApp: App {
             Image(nsImage: tintedImage(named: "icon", color: getForegroundColor(vm: vm)))
         }
         .menuBarExtraStyle(.window)
+        .commands {
+            appCommands
+        }
+    }
+}
+
+private extension WhisperTranscriberApp {
+    @CommandsBuilder
+    var appCommands: some Commands {
+        CommandGroup(after: .appInfo) {
+            Button("Show Logs") {
+                LogWindowController.shared.toggle()
+            }
+            .keyboardShortcut("l", modifiers: [.command, .control])
+        }
     }
 }
 
