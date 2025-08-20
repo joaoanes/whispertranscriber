@@ -20,11 +20,27 @@ struct WhisperTranscriberApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            WhisperTranscriberView()
+            Button("Settings...") {
+                SettingsWindowController.shared.showWindow()
+            }
+            Divider()
+            Button("Show Records") {
+                RecordsWindowController.shared.showWindow()
+            }
+            Button("Show Logs") {
+                LogWindowController.shared.toggle()
+            }
+            Divider()
+            Button("About WhisperTranscriber") {
+                AboutWindowController.shared.showWindow()
+            }
+            Button("Quit") {
+                NSApp.terminate(nil)
+            }
         } label: {
             Image(nsImage: tintedImage(named: "icon", color: getForegroundColor(vm: vm)))
         }
-        .menuBarExtraStyle(.window)
+        .menuBarExtraStyle(.menu)
         .commands {
             appCommands
         }
