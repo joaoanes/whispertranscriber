@@ -1,5 +1,6 @@
 import SwiftUI
 import Carbon
+import WhisperKit
 
 @main
 struct WhisperTranscriberApp: App {
@@ -15,6 +16,12 @@ struct WhisperTranscriberApp: App {
             Task { @MainActor in
                 RecorderViewModel.shared.toggleRecording()
             }
+        }
+
+        // we need this otherwise whisperkit won't log in release mode, and we really want those logs
+        Logging.shared.logLevel = .debug
+        Logging.shared.loggingCallback = { message in
+            print("[WhisperKit]: \(message)")
         }
     }
 

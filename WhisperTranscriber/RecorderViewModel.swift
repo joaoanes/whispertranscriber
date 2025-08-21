@@ -30,7 +30,7 @@ class RecorderViewModel: ObservableObject {
         whisperKit = nil
         do {
             let modelsPath = try await ensureModelsAreThere()
-            let config = WhisperKitConfig(modelFolder: modelsPath, logLevel: .debug, prewarm: true, load: true, download: false)
+            let config = WhisperKitConfig(modelFolder: modelsPath, verbose: true, logLevel: .debug, prewarm: true, load: true, download: false)
             whisperKit = try await WhisperKit(config)
 
             isPrewarming = false
