@@ -44,9 +44,6 @@ class RecorderViewModel: ObservableObject {
     
     private func ensureModelsAreThere() async throws -> String {
         let selectedModel = SettingsManager.shared.selectedModel
-        #if LITE_MODE
-        return try await setupLiteModels()
-        #else
         if let bundlePath = Bundle.main.resourceURL?.appendingPathComponent("hf/models/argmaxinc/whisperkit-coreml/\(selectedModel)") {
              if FileManager.default.fileExists(atPath: bundlePath.path) {
                  print("✅ Found models in app bundle at", bundlePath.path)
@@ -54,7 +51,6 @@ class RecorderViewModel: ObservableObject {
              }
         }
         return try await setupLiteModels()
-        #endif
     }
 
     private func setupLiteModels() async throws -> String {
