@@ -113,6 +113,14 @@ struct IdleRecordingView: View {
 
             DisclosureGroup("Advanced") {
                 VStack {
+                    Text("Fade Milliseconds:")
+                        .font(.subheadline)
+                        .disabled(true)
+
+                    TextField("Fade Milliseconds", value: $settings.fadeMilliseconds, formatter: NumberFormatter())
+                        .background(Color(NSColor.controlBackgroundColor))
+                        .multilineTextAlignment(.center)
+                        .frame(width: 80, height: 22)
 
                     Text("Model:")
                         .font(.subheadline)
