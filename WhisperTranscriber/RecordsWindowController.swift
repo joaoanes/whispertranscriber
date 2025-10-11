@@ -1,36 +1,30 @@
 import SwiftUI
+import AppKit
 
-class RecordsWindowController: NSObject, NSWindowDelegate {
-    static let shared = RecordsWindowController()
-    var recordsWindow: NSWindow?
+class RecordsWindowController: NSWindowController, NSWindowDelegate {
+    var onWindowClose: (() -> Void)?
 
-    private override init() {
-        super.init()
+    init() {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 500),
+            styleMask: [.titled, .closable, .resizable, .miniaturizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.center()
+        window.setFrameAutosaveName("Records")
+        window.contentView = NSHostingView(rootView: RecordsView())
+        window.isReleasedWhenClosed = true
+        super.init(window: window)
+        window.delegate = self
     }
 
-    func showWindow() {
-        if recordsWindow == nil {
-            let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 400, height: 500),
-                styleMask: [.titled, .closable, .resizable, .miniaturizable],
-                backing: .buffered,
-                defer: false
-            )
-            window.center()
-            window.setFrameAutosaveName("Records")
-            window.contentView = NSHostingView(rootView: RecordsView())
-            window.delegate = self
-            window.isReleasedWhenClosed = false // We manage the lifecycle now
-            self.recordsWindow = window
-        }
-
-        recordsWindow?.makeKeyAndOrderFront(nil)
-        // Also ensure the app becomes active to bring the window to the front
-        NSApp.activate(ignoringOtherApps: true)
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
 
     func windowWillClose(_ notification: Notification) {
-        // We just hide the window instead of closing it.
-        // The window object and its view hierarchy are kept alive.
+        onWindowClose?()
     }
 }

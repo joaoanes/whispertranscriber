@@ -1,12 +1,10 @@
 import SwiftUI
 import AppKit
 
-class LogWindowController: NSWindowController {
-    static let shared = LogWindowController()
+class LogWindowController: NSWindowController, NSWindowDelegate {
+    var onWindowClose: (() -> Void)?
 
-    private var logWindow: NSWindow?
-
-    private init() {
+    init() {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 600, height: 400),
             styleMask: [.titled, .closable, .resizable, .miniaturizable],
@@ -16,22 +14,18 @@ class LogWindowController: NSWindowController {
         window.center()
         window.setFrameAutosaveName("LogWindow")
         window.title = "App Logs"
-        window.isReleasedWhenClosed = false
+        window.isReleasedWhenClosed = true
         window.contentView = NSHostingView(rootView: LogView())
         super.init(window: window)
-        self.logWindow = window
+        window.delegate = self
     }
 
+    @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func toggle() {
-        if logWindow?.isVisible == true {
-            logWindow?.orderOut(nil)
-        } else {
-            logWindow?.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-        }
+    func windowWillClose(_ notification: Notification) {
+        onWindowClose?()
     }
 }
