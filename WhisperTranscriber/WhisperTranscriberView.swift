@@ -4,12 +4,13 @@ struct WhisperTranscriberView: View {
     @StateObject private var vm = RecorderViewModel.shared
     @ObservedObject private var settings = SettingsManager.shared
     
+    var showRecords: () -> Void
+
     var body: some View {
         ZStack {
-            Color.clear // full-size hit area
+            Color.clear
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    // deselect our capture view if it’s focused
                     NSApp.keyWindow?.makeFirstResponder(nil)
                 }
             if vm.isPrewarming {
@@ -18,8 +19,8 @@ struct WhisperTranscriberView: View {
                 IdleRecordingView(
                     settings: settings,
                     isRecording: vm.isRecording,
-                    isTranscribing:
-                        vm.isTranscribing
+                    isTranscribing: vm.isTranscribing,
+                    showRecords: showRecords
                 )
             }
         }
@@ -73,6 +74,7 @@ struct IdleRecordingView: View {
     @StateObject private var vm = RecorderViewModel.shared
     var isRecording: Bool
     var isTranscribing: Bool
+    var showRecords: () -> Void
 
     private func statusText() -> String {
         if isTranscribing {
@@ -146,7 +148,7 @@ struct IdleRecordingView: View {
             Divider()
 
             Button("Records") {
-                RecordsWindowController.shared.showWindow()
+                showRecords()
             }
             
             Button("Quit WhisperTranscriber", action: { NSApp.terminate(nil) })
@@ -171,7 +173,8 @@ struct WhisperTranscriberView_Previews: PreviewProvider {
             IdleRecordingView(
                 settings: SettingsManager.shared,
                 isRecording: false,
-                isTranscribing: false
+                isTranscribing: false,
+                showRecords: {}
             )
             .previewDisplayName("Idle/Recording")
             .fixedSize()

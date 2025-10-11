@@ -8,9 +8,10 @@ struct WhisperTranscriberApp: App {
     @StateObject private var settings = SettingsManager.shared
     @StateObject private var logStore = LogStore.shared
 
+    @State private var logWindowController: LogWindowController?
+    @State private var recordsWindowController: RecordsWindowController?
+
     init() {
-        // By accessing LogStore.shared here, we ensure its init() runs
-        // before anything else in this init() method.
         let _ = LogStore.shared
         HotKeyManager.shared.register(chord: settings.hotkey) {
             Task { @MainActor in
@@ -18,7 +19,6 @@ struct WhisperTranscriberApp: App {
             }
         }
 
-        // we need this otherwise whisperkit won't log in release mode, and we really want those logs
         Logging.shared.logLevel = .debug
         Logging.shared.loggingCallback = { message in
             print("[WhisperKit]: \(message)")
@@ -27,7 +27,7 @@ struct WhisperTranscriberApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            WhisperTranscriberView()
+            WhisperTranscriberView(showRecords: showRecords)
         } label: {
             Image(nsImage: tintedImage(named: "icon", color: getForegroundColor(vm: vm)))
         }
@@ -36,6 +36,30 @@ struct WhisperTranscriberApp: App {
             appCommands
         }
     }
+
+    private func showLogs() {
+        if logWindowController == nil {
+            let controller = LogWindowController()
+            controller.onWindowClose = { [self] in
+                self.logWindowController = nil
+            }
+            self.logWindowController = controller
+        }
+        logWindowController?.showWindow(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func showRecords() {
+        if recordsWindowController == nil {
+            let controller = RecordsWindowController()
+            controller.onWindowClose = { [self] in
+                self.recordsWindowController = nil
+            }
+            self.recordsWindowController = controller
+        }
+        recordsWindowController?.showWindow(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
 }
 
 private extension WhisperTranscriberApp {
@@ -43,9 +67,14 @@ private extension WhisperTranscriberApp {
     var appCommands: some Commands {
         CommandGroup(after: .appInfo) {
             Button("Show Logs") {
-                LogWindowController.shared.toggle()
+                showLogs()
             }
             .keyboardShortcut("l", modifiers: [.command, .control])
+
+            Button("Show Records") {
+                showRecords()
+            }
+            .keyboardShortcut("r", modifiers: [.command, .control])
         }
     }
 }
