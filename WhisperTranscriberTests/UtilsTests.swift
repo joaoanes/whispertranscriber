@@ -62,6 +62,16 @@ final class UtilsTests: XCTestCase {
     }
 
     func testRequestMicPermissionCallsCallbackWhenAuthorized() {
+        let originalAuthStatus = getAudioAuthStatus
+        let originalAudioAccess = requestAudioAccess
+        defer {
+            getAudioAuthStatus = originalAuthStatus
+            requestAudioAccess = originalAudioAccess
+        }
+
+        getAudioAuthStatus = { .authorized }
+        requestAudioAccess = { cb in cb(true) }
+
         let expectation = expectation(description: "Mic permission callback")
         var grantedResult: Bool?
 
@@ -70,7 +80,55 @@ final class UtilsTests: XCTestCase {
             expectation.fulfill()
         }
 
-        waitForExpectations(timeout: 2.0)
-        XCTAssertNotNil(grantedResult)
+        waitForExpectations(timeout: 1.0)
+        XCTAssertTrue(grantedResult == true)
+    }
+
+    func testRequestMicPermissionCallsCallbackWhenDenied() {
+        let originalAuthStatus = getAudioAuthStatus
+        let originalAudioAccess = requestAudioAccess
+        defer {
+            getAudioAuthStatus = originalAuthStatus
+            requestAudioAccess = originalAudioAccess
+        }
+
+        getAudioAuthStatus = { .denied }
+        requestAudioAccess = { cb in cb(false) }
+
+        let expectation = expectation(description: "Mic permission callback")
+        var grantedResult: Bool?
+
+        requestMicPermission { granted in
+            grantedResult = granted
+            expectation.fulfill()
+        }
+
+        waitForExpectations(timeout: 1.0)
+        XCTAssertFalse(grantedResult == true)
+    }
+
+    func testRequestMicPermissionRequestsAccessWhenNotDetermined() {
+        let originalAuthStatus = getAudioAuthStatus
+        let originalAudioAccess = requestAudioAccess
+        defer {
+            getAudioAuthStatus = originalAuthStatus
+            requestAudioAccess = originalAudioAccess
+        }
+
+        getAudioAuthStatus = { .notDetermined }
+        var requestAccessCalled = false
+        requestAudioAccess = { cb in
+            requestAccessCalled = true
+            cb(true)
+        }
+
+        let expectation = expectation(description: "Mic permission callback")
+
+        requestMicPermission { granted in
+            expectation.fulfill()
+        }
+
+        waitForExpectations(timeout: 1.0)
+        XCTAssertTrue(requestAccessCalled)
     }
 }

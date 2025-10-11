@@ -1,24 +1,29 @@
 import AVFoundation
 import Foundation
 import Dispatch
-import AVFoundation
 import WhisperKit
 import AppKit
 import SwiftUI
 import Carbon
 
- func requestMicPermission(_ cb: @escaping (Bool) -> Void) {
-        switch AVCaptureDevice.authorizationStatus(for: .audio) {
-        case .authorized:
-            cb(true)
-        case .notDetermined:
-            AVCaptureDevice.requestAccess(for: .audio) { granted in
-                cb(granted)
-            }
-        default:
-            cb(false)
-        }
+var getAudioAuthStatus: () -> AVAuthorizationStatus = {
+    AVCaptureDevice.authorizationStatus(for: .audio)
+}
+
+var requestAudioAccess: (@escaping (Bool) -> Void) -> Void = { cb in
+    AVCaptureDevice.requestAccess(for: .audio, completionHandler: cb)
+}
+
+func requestMicPermission(_ cb: @escaping (Bool) -> Void) {
+    switch getAudioAuthStatus() {
+    case .authorized:
+        cb(true)
+    case .notDetermined:
+        requestAudioAccess(cb)
+    default:
+        cb(false)
     }
+}
 
     func tempURL() -> URL {
         let caches = FileManager.default.urls(
