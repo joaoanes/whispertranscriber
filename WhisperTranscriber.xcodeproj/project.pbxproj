@@ -20,7 +20,7 @@
 		44104C6E2DC402A000993142 /* WhisperTranscriber.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WhisperTranscriber.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		44104C8B2DC4111700993142 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		44104C8C2DC4111700993142 /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
-		44104D9F2DC6EB9700993142 /* hf */ = {isa = PBXFileReference; lastKnownFileType = folder; name = hf; path = ../../Documents/hf; sourceTree = "<group>"; };
+               44104D9F2DC6EB9700993142 /* hf */ = {isa = PBXFileReference; lastKnownFileType = folder; name = hf; path = ../../Documents/hf; sourceTree = "<group>"; };
 		44104DC02DC6F81B00993142 /* WhisperTranscriberLite.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WhisperTranscriberLite.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -180,9 +180,9 @@
 			);
 			mainGroup = 44104C652DC402A000993142;
 			minimizedProjectReferenceProxies = 1;
-			packageReferences = (
-				44104C7D2DC403F400993142 /* XCLocalSwiftPackageReference "../whisperkit" */,
-			);
+                       packageReferences = (
+                               44104C7D2DC403F400993142 /* XCRemoteSwiftPackageReference "WhisperKit" */,
+                       );
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 44104C6F2DC402A000993142 /* Products */;
 			projectDirPath = "";
@@ -511,12 +511,16 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		44104C7D2DC403F400993142 /* XCLocalSwiftPackageReference "../whisperkit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../whisperkit;
-		};
-/* End XCLocalSwiftPackageReference section */
+/* Begin XCRemoteSwiftPackageReference section */
+               44104C7D2DC403F400993142 /* XCRemoteSwiftPackageReference "WhisperKit" */ = {
+                       isa = XCRemoteSwiftPackageReference;
+                       repositoryURL = "https://github.com/argmaxinc/WhisperKit.git";
+                       requirement = {
+                               branch = main;
+                               kind = branch;
+                       };
+               };
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		44104C7E2DC403F400993142 /* WhisperKit */ = {

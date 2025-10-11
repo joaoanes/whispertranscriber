@@ -20,39 +20,37 @@ WhisperTranscriber is a macOS application that allows users to record audio and 
    cd WhisperTranscriber
    ```
 
-2. WhisperKit is configured as a local dependency. Ensure the `whisperkit` directory is present at the same level as the `WhisperTranscriber` directory.
+2. Dependencies are fetched automatically from Swift Package Manager, including the remote [WhisperKit](https://github.com/argmaxinc/WhisperKit) package maintained by Argmax.
 
-3. Open the project in Xcode:
+3. Open the project in Xcode 26.0.1 or newer:
    ```bash
    open WhisperTranscriber.xcodeproj
    ```
 
 3. Build and run the project in Xcode.
 
-## Building WhisperKit
+### Model assets
 
-WhisperKit is configured as a local dependency. To build WhisperKit, follow these steps:
+The Xcode project copies the contents of `~/Documents/hf` into the application bundle. When building locally, download the
+WhisperKit Core ML models you need (for example from Hugging Face) and drop them into that directory before archiving.
 
-1. Ensure you have the necessary tools installed, such as Xcode and Swift.
-2. Clone the WhisperKit repository:
-   ```bash
-   git clone https://github.com/argmaxinc/WhisperKit.git
-   ```
-3. Navigate to the WhisperKit directory:
-   ```bash
-   cd WhisperKit
-   ```
-4. Build the WhisperKit package:
-   ```bash
-   swift build
-   ```
-5. Ensure the `whisperkit` directory is at the same level as the `WhisperTranscriber` directory for the local dependency to work correctly.
+CI builds create an empty directory at `/Users/runner/work/Documents/hf` so the resource copy phase succeeds without bundling
+large model artifacts.
 
 ## Usage
 
 - Launch the application.
 - Use the configured hotkey (default: ⌥⌘S) to start and stop recording.
 - The application will transcribe the audio and copy the text to the clipboard.
+
+## CI Code Signing Settings
+
+The GitHub Actions workflow builds the macOS app without access to signing certificates. To keep those CI builds green, the workflow sets two Xcode build settings to `NO`:
+
+- `CODE_SIGNING_ALLOWED` tells Xcode whether it should attempt to sign any produced binaries. Disabling it skips the signing phase entirely.
+- `CODE_SIGNING_REQUIRED` controls whether a build should fail if signing cannot happen. Disabling it lets the build finish even when no signing identities are present.
+
+When you build locally with a valid signing identity you can leave both settings at their defaults (`YES`) so Xcode signs the products as usual.
 
 ## License
 
