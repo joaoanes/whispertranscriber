@@ -4,8 +4,6 @@ import AppKit
 class LogWindowController: NSWindowController {
     static let shared = LogWindowController()
 
-    private var logWindow: NSWindow?
-
     private init() {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 600, height: 400),
@@ -19,7 +17,6 @@ class LogWindowController: NSWindowController {
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: LogView())
         super.init(window: window)
-        self.logWindow = window
     }
 
     required init?(coder: NSCoder) {
@@ -27,10 +24,10 @@ class LogWindowController: NSWindowController {
     }
 
     func toggle() {
-        if logWindow?.isVisible == true {
-            logWindow?.orderOut(nil)
+        if window?.isVisible == true {
+            window?.orderOut(nil)
         } else {
-            logWindow?.makeKeyAndOrderFront(nil)
+            window?.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
         }
     }
