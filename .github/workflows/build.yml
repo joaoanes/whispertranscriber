@@ -40,6 +40,16 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY=""
 
+      - name: Run tests
+        run: |
+          xcodebuild test \
+            -project WhisperTranscriber.xcodeproj \
+            -scheme WhisperTranscriber \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
       - name: Build WhisperTranscriber Lite
         run: |
           xcodebuild \
