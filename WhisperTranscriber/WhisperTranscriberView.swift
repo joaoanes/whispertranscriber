@@ -139,6 +139,20 @@ struct IdleRecordingView: View {
                         }
                     }
                     .labelsHidden()
+
+                    Toggle("Log to file", isOn: $settings.logToFile)
+
+                    if settings.logToFile {
+                        if let logFileURL = LogStore.shared.logFileURL {
+                            Button(action: {
+                                NSWorkspace.shared.open(logFileURL)
+                            }) {
+                                Text(logFileURL.path)
+                                    .truncationMode(.middle)
+                                    .lineLimit(1)
+                            }
+                        }
+                    }
                 }
             }
             
