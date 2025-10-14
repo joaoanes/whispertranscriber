@@ -1,17 +1,24 @@
 import Foundation
 import Combine
 
+struct LogMessage: Identifiable, Hashable {
+    let id = UUID()
+    let message: String
+}
+
 @MainActor
 class LogStore: ObservableObject {
     static let shared = LogStore()
 
-    @Published var logMessages: [String] = []
+    @Published var logMessages: [LogMessage] = []
 
     private var pipe = Pipe()
     private var originalStdout: Int32
     private var originalStderr: Int32
     private var logFileHandle: FileHandle?
     private var cancellable: AnyCancellable?
+    private var logBuffer: String = ""
+    private var updateTimer: Timer?
 
     public var logFileURL: URL? {
         guard let applicationSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
@@ -86,16 +93,29 @@ class LogStore: ObservableObject {
                     }
                 }
                 if let string = String(data: data, encoding: .utf8) {
-                    self.logMessages.append(string)
-                    if self.logMessages.count > 300 {
-                        self.logMessages.removeFirst(self.logMessages.count - 300)
-                    }
+                    self.logBuffer.append(string)
                 }
             }
+        }
+
+        updateTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
+            self?.flushLogBuffer()
+        }
+    }
+
+    func flushLogBuffer() {
+        guard !logBuffer.isEmpty else { return }
+        let messageContent = logBuffer
+        logBuffer = ""
+        logMessages.append(LogMessage(message: messageContent))
+        if logMessages.count > 300 {
+            logMessages.removeFirst(logMessages.count - 300)
         }
     }
 
     deinit {
+        updateTimer?.invalidate()
+        flushLogBuffer()
         logFileHandle?.closeFile()
         // Restore original stdout and stderr
         dup2(originalStdout, STDOUT_FILENO)
