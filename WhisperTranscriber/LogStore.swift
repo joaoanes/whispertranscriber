@@ -77,18 +77,15 @@ class LogStore: ObservableObject {
             guard let self = self else { return }
             let data = fileHandle.availableData
 
-            self.logFileHandle?.write(data)
-
-            // Write the data back to the original stdout
-            var dataCopy = data
-            dataCopy.withUnsafeMutableBytes { (ptr: UnsafeMutableRawBufferPointer) in
-                if let baseAddress = ptr.baseAddress {
-                    write(self.originalStdout, baseAddress, data.count)
+            Task { @MainActor in
+                self.logFileHandle?.write(data)
+                var dataCopy = data
+                dataCopy.withUnsafeMutableBytes { (ptr: UnsafeMutableRawBufferPointer) in
+                    if let baseAddress = ptr.baseAddress {
+                        write(self.originalStdout, baseAddress, data.count)
+                    }
                 }
-            }
-
-            if let string = String(data: data, encoding: .utf8) {
-                DispatchQueue.main.async {
+                if let string = String(data: data, encoding: .utf8) {
                     self.logMessages.append(string)
                     if self.logMessages.count > 300 {
                         self.logMessages.removeFirst(self.logMessages.count - 300)
