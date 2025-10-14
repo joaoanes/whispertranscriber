@@ -115,7 +115,6 @@ class LogStore: ObservableObject {
 
     deinit {
         updateTimer?.invalidate()
-        flushLogBuffer()
         logFileHandle?.closeFile()
         // Restore original stdout and stderr
         dup2(originalStdout, STDOUT_FILENO)
