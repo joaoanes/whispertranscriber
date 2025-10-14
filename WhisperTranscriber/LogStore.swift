@@ -33,23 +33,42 @@ class LogStore: ObservableObject {
         dup2(pipe.fileHandleForWriting.fileDescriptor, STDOUT_FILENO)
         dup2(pipe.fileHandleForWriting.fileDescriptor, STDERR_FILENO)
 
-        cancellable = SettingsManager.shared.$logToFile.sink { [weak self] logToFile in
-            guard let self = self else { return }
-            if logToFile {
-                if let logFileURL = self.logFileURL {
-                    do {
-                        if !FileManager.default.fileExists(atPath: logFileURL.path) {
-                            FileManager.default.createFile(atPath: logFileURL.path, contents: nil, attributes: nil)
+        cancellable = SettingsManager.shared.objectWillChange.sink { [weak self] _ in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                let logToFile = SettingsManager.shared.logToFile
+                if logToFile {
+                    if self.logFileHandle == nil {
+                        if let logFileURL = self.logFileURL {
+                            do {
+                                if !FileManager.default.fileExists(atPath: logFileURL.path) {
+                                    FileManager.default.createFile(atPath: logFileURL.path, contents: nil, attributes: nil)
+                                }
+                                self.logFileHandle = try FileHandle(forWritingTo: logFileURL)
+                                self.logFileHandle?.seekToEndOfFile()
+                            } catch {
+                                print("Error opening log file: \(error)")
+                            }
                         }
-                        self.logFileHandle = try FileHandle(forWritingTo: logFileURL)
-                        self.logFileHandle?.seekToEndOfFile()
-                    } catch {
-                        print("Error opening log file: \(error)")
                     }
+                } else {
+                    self.logFileHandle?.closeFile()
+                    self.logFileHandle = nil
                 }
-            } else {
-                self.logFileHandle?.closeFile()
-                self.logFileHandle = nil
+            }
+        }
+
+        if SettingsManager.shared.logToFile {
+            if let logFileURL = self.logFileURL {
+                do {
+                    if !FileManager.default.fileExists(atPath: logFileURL.path) {
+                        FileManager.default.createFile(atPath: logFileURL.path, contents: nil, attributes: nil)
+                    }
+                    self.logFileHandle = try FileHandle(forWritingTo: logFileURL)
+                    self.logFileHandle?.seekToEndOfFile()
+                } catch {
+                    print("Error opening log file: \(error)")
+                }
             }
         }
 
