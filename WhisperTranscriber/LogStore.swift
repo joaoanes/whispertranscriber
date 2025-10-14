@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 
+@MainActor
 class LogStore: ObservableObject {
     static let shared = LogStore()
 
