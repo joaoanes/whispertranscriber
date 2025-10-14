@@ -20,7 +20,7 @@ struct LogTextView: NSViewRepresentable {
     func updateNSView(_ nsView: NSScrollView, context: Context) {
         guard let textView = nsView.documentView as? NSTextView else { return }
 
-        let newText = logMessages.map { $0.message }.joined()
+        let newText = logMessages.map { $0.message }.joined(separator: "\n")
 
         let shouldScroll = textView.visibleRect.maxY >= textView.bounds.maxY - 10
 

@@ -98,16 +98,28 @@ class LogStore: ObservableObject {
             }
         }
 
-        updateTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
             self?.flushLogBuffer()
         }
+        updateTimer = timer
+        RunLoop.main.add(timer, forMode: .common)
     }
 
     func flushLogBuffer() {
         guard !logBuffer.isEmpty else { return }
-        let messageContent = logBuffer
+
+        var newEntries: [LogMessage] = []
+
+        logBuffer.enumerateLines { line, _ in
+            if !line.isEmpty {
+                newEntries.append(LogMessage(message: line))
+            }
+        }
+
         logBuffer = ""
-        logMessages.append(LogMessage(message: messageContent))
+
+        logMessages.append(contentsOf: newEntries)
+
         if logMessages.count > 300 {
             logMessages.removeFirst(logMessages.count - 300)
         }
