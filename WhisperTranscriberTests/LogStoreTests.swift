@@ -12,7 +12,7 @@ class LogStoreTests: XCTestCase {
         // When
         // Simulate receiving 301 individual log lines in a single batch
         for i in 1...301 {
-            logStore.logBuffer.append("Message \(i)\n")
+            logStore.appendToLogBuffer("Message \(i)\n")
         }
 
         // Manually trigger the flush
@@ -25,7 +25,7 @@ class LogStoreTests: XCTestCase {
         // When
         // Simulate receiving 50 more lines, which should trigger the limit
         for i in 302...351 {
-            logStore.logBuffer.append("Message \(i)\n")
+            logStore.appendToLogBuffer("Message \(i)\n")
         }
 
         logStore.flushLogBuffer()
