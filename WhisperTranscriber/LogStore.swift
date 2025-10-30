@@ -125,6 +125,10 @@ class LogStore: ObservableObject {
         }
     }
 
+    public func appendToLogBuffer(_ message: String) {
+        logBuffer.append(message)
+    }
+
     deinit {
         updateTimer?.invalidate()
         logFileHandle?.closeFile()
