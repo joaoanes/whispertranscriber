@@ -2,7 +2,7 @@ import Foundation
 import Combine
 
 struct LogMessage: Identifiable, Hashable {
-    let id = UUID()
+    let id: Int // Use incrementing counter instead of UUID for stable identity
     let message: String
 }
 
@@ -19,6 +19,7 @@ class LogStore: ObservableObject {
     private var cancellable: AnyCancellable?
     private var logBuffer: String = ""
     private var updateTimer: Timer?
+    private var messageIdCounter: Int = 0 // Counter for stable IDs
 
     public var logFileURL: URL? {
         guard let applicationSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
@@ -93,13 +94,27 @@ class LogStore: ObservableObject {
                     }
                 }
                 if let string = String(data: data, encoding: .utf8) {
-                    self.logBuffer.append(string)
+                    // Filter out OSLog binary data - only keep lines that look like actual log messages
+                    let lines = string.components(separatedBy: .newlines)
+                    for line in lines {
+                        // Skip OSLog binary format lines (they start with "OSLOG-" or contain mostly control chars)
+                        if line.hasPrefix("OSLOG-") || line.isEmpty {
+                            continue
+                        }
+                        // Only append lines that have mostly printable characters
+                        let printableCount = line.filter { $0.isASCII && !$0.isWhitespace && !$0.isNewline }.count
+                        if printableCount > 5 { // Arbitrary threshold for "real" log lines
+                            self.logBuffer.append(line + "\n")
+                        }
+                    }
                 }
             }
         }
 
-        let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
-            self?.flushLogBuffer()
+        let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.flushLogBuffer()
+            }
         }
         updateTimer = timer
         RunLoop.main.add(timer, forMode: .common)
@@ -112,17 +127,23 @@ class LogStore: ObservableObject {
 
         logBuffer.enumerateLines { line, _ in
             if !line.isEmpty {
-                newEntries.append(LogMessage(message: line))
+                self.messageIdCounter += 1
+                newEntries.append(LogMessage(id: self.messageIdCounter, message: line))
             }
         }
 
         logBuffer = ""
 
-        logMessages.append(contentsOf: newEntries)
+        // Batch updates to reduce UI thrashing
+        if newEntries.isEmpty { return }
 
-        if logMessages.count > 300 {
-            logMessages.removeFirst(logMessages.count - 300)
+        // Atomic update: create new array with existing + new entries, then trim
+        // This triggers only ONE SwiftUI update instead of two
+        var updatedMessages = logMessages + newEntries
+        if updatedMessages.count > 100 {
+            updatedMessages = Array(updatedMessages.suffix(100))
         }
+        logMessages = updatedMessages
     }
 
     public func appendToLogBuffer(_ message: String) {
