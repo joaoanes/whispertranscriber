@@ -88,12 +88,12 @@ struct IdleRecordingView: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            
-            
+
+
             Text("Toggle Shortcut:")
                 .font(.subheadline)
                 .disabled(true)
-            
+
             HotkeyRecorderView(chord: $settings.hotkey) { newChord in
                 let old = settings.hotkey
                 settings.hotkey = newChord
@@ -103,7 +103,7 @@ struct IdleRecordingView: View {
                 }
             }
             .frame(width: 80, height: 22)
-            
+
             Text("Suffix:")
                 .font(.subheadline)
                 .disabled(true)
@@ -114,15 +114,19 @@ struct IdleRecordingView: View {
                 .frame(width: 80, height: 22)
 
             DisclosureGroup("Advanced") {
-                VStack {
-                    Text("Fade Milliseconds:")
-                        .font(.subheadline)
-                        .disabled(true)
+                VStack(spacing: 4) {
+                    Toggle("Fade Volume", isOn: $settings.fadeVolumeEnabled)
 
-                    TextField("Fade Milliseconds", value: $settings.fadeMilliseconds, formatter: NumberFormatter())
-                        .background(Color(NSColor.controlBackgroundColor))
-                        .multilineTextAlignment(.center)
-                        .frame(width: 80, height: 22)
+                    if settings.fadeVolumeEnabled {
+                        Text("Fade Milliseconds:")
+                            .font(.subheadline)
+                            .disabled(true)
+
+                        TextField("Fade Milliseconds", value: $settings.fadeMilliseconds, formatter: NumberFormatter())
+                            .background(Color(NSColor.controlBackgroundColor))
+                            .multilineTextAlignment(.center)
+                            .frame(width: 80, height: 22)
+                    }
 
                     Text("Model:")
                         .font(.subheadline)
@@ -139,6 +143,7 @@ struct IdleRecordingView: View {
                         }
                     }
                     .labelsHidden()
+                    .frame(width: 200)
 
                     Toggle("Log to file", isOn: $settings.logToFile)
 
@@ -151,23 +156,26 @@ struct IdleRecordingView: View {
                                     .truncationMode(.middle)
                                     .lineLimit(1)
                             }
+                            .buttonStyle(.plain)
                         }
                     }
                 }
             }
-            
+
             Text(statusText())
                 .disabled(true)
-            
+
             Divider()
 
             Button("Records") {
                 showRecords()
             }
-            
+
             Button("Quit WhisperTranscriber", action: { NSApp.terminate(nil) })
                 .keyboardShortcut("Q")
-        }.padding(10)
+        }
+        .padding(10)
+        .fixedSize()
     }
 }
 

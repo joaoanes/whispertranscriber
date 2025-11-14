@@ -154,8 +154,10 @@ class RecorderViewModel: ObservableObject {
         ]
 
         do {
-            let fadeDuration = Double(SettingsManager.shared.fadeMilliseconds) / 1000.0
-            AudioFade.shared.fadeOut(duration: fadeDuration)
+            if SettingsManager.shared.fadeVolumeEnabled {
+                let fadeDuration = Double(SettingsManager.shared.fadeMilliseconds) / 1000.0
+                AudioFade.shared.fadeOut(duration: fadeDuration)
+            }
 
             recorder = try AVAudioRecorder(url: url, settings: settings)
             recorder?.prepareToRecord()
@@ -164,12 +166,17 @@ class RecorderViewModel: ObservableObject {
                 print("▶️ Recording started at", url.path)
             } else {
                 print("❌ Recorder failed to start")
-                AudioFade.shared.fadeIn(duration: fadeDuration)
+                if SettingsManager.shared.fadeVolumeEnabled {
+                    let fadeDuration = Double(SettingsManager.shared.fadeMilliseconds) / 1000.0
+                    AudioFade.shared.fadeIn(duration: fadeDuration)
+                }
             }
         } catch {
             print("❌ Failed to set up recorder:", error)
-            let fadeDuration = Double(SettingsManager.shared.fadeMilliseconds) / 1000.0
-            AudioFade.shared.fadeIn(duration: fadeDuration)
+            if SettingsManager.shared.fadeVolumeEnabled {
+                let fadeDuration = Double(SettingsManager.shared.fadeMilliseconds) / 1000.0
+                AudioFade.shared.fadeIn(duration: fadeDuration)
+            }
         }
     }
 
@@ -181,8 +188,10 @@ class RecorderViewModel: ObservableObject {
         }
         isRecording = false
 
-        let fadeDuration = Double(SettingsManager.shared.fadeMilliseconds) / 1000.0
-        AudioFade.shared.fadeIn(duration: fadeDuration)
+        if SettingsManager.shared.fadeVolumeEnabled {
+            let fadeDuration = Double(SettingsManager.shared.fadeMilliseconds) / 1000.0
+            AudioFade.shared.fadeIn(duration: fadeDuration)
+        }
 
         guard let url = recorder?.url else {
             print("❌ No audio file URL")
