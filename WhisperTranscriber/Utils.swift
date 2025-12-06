@@ -25,14 +25,33 @@ func requestMicPermission(_ cb: @escaping (Bool) -> Void) {
     }
 }
 
-    func tempURL() -> URL {
-        let caches = FileManager.default.urls(
-            for: .cachesDirectory,
-            in: .userDomainMask
-        ).first!
-        let name = "recording_\(Int(Date().timeIntervalSince1970)).wav"
-        return caches.appendingPathComponent(name)
+func getRecordingsDirectory() -> URL? {
+    guard let applicationSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+        return nil
     }
+    let recordingsDirectory = applicationSupport
+        .appendingPathComponent("WhisperTranscriber")
+        .appendingPathComponent("Recordings")
+
+    if !FileManager.default.fileExists(atPath: recordingsDirectory.path) {
+        do {
+            try FileManager.default.createDirectory(at: recordingsDirectory, withIntermediateDirectories: true, attributes: nil)
+        } catch {
+            print("Error creating recordings directory: \(error)")
+            return nil
+        }
+    }
+    return recordingsDirectory
+}
+
+func tempURL() -> URL {
+    guard let recordingsDir = getRecordingsDirectory() else {
+        // Fallback to temp directory if Application Support is unavailable
+        return FileManager.default.temporaryDirectory.appendingPathComponent("recording_\(Int(Date().timeIntervalSince1970)).wav")
+    }
+    let name = "recording_\(Int(Date().timeIntervalSince1970)).wav"
+    return recordingsDir.appendingPathComponent(name)
+}
 
 func UTGetOSTypeFromString(_ str: String) -> OSType {
     precondition(str.utf8.count == 4, "Must be 4 chars")
@@ -42,6 +61,3 @@ func UTGetOSTypeFromString(_ str: String) -> OSType {
     }
     return result
 }
-
-
-

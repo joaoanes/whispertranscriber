@@ -8,24 +8,51 @@ class RecordingsManager: ObservableObject {
     @Published var transcriptions: [URL: String] = [:]
 
     private let fileManager = FileManager.default
-    var cacheDirectory: URL? {
-        // Recordings are saved to the root of the caches directory.
-        return fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first
+    var recordingsDirectory: URL? {
+        // Recordings are saved to Application Support/WhisperTranscriber/Recordings
+        return getRecordingsDirectory()
     }
 
     private init() {
+        migrateOldRecordings()
         scanForRecordings()
     }
 
+    private func migrateOldRecordings() {
+        guard let newDir = recordingsDirectory,
+              let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+            return
+        }
+
+        do {
+            let files = try fileManager.contentsOfDirectory(at: cacheDir, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
+            let wavFiles = files.filter { $0.pathExtension == "wav" && $0.lastPathComponent.starts(with: "recording_") }
+
+            for file in wavFiles {
+                let destination = newDir.appendingPathComponent(file.lastPathComponent)
+                if !fileManager.fileExists(atPath: destination.path) {
+                    do {
+                        try fileManager.moveItem(at: file, to: destination)
+                        print("Migrated recording: \(file.lastPathComponent)")
+                    } catch {
+                        print("Failed to migrate recording \(file.lastPathComponent): \(error)")
+                    }
+                }
+            }
+        } catch {
+            print("Error checking old cache directory for migration: \(error)")
+        }
+    }
+
     func scanForRecordings() {
-        guard let cacheDirectory = cacheDirectory else {
-            print("Error: Could not determine cache directory.")
+        guard let recordingsDirectory = recordingsDirectory else {
+            print("Error: Could not determine recordings directory.")
             self.recordings = []
             return
         }
 
         do {
-            let allFiles = try fileManager.contentsOfDirectory(at: cacheDirectory, includingPropertiesForKeys: [.creationDateKey], options: .skipsHiddenFiles)
+            let allFiles = try fileManager.contentsOfDirectory(at: recordingsDirectory, includingPropertiesForKeys: [.creationDateKey], options: .skipsHiddenFiles)
             // Filter for .wav files and sort by creation date, newest first
             self.recordings = allFiles
                 .filter { $0.pathExtension == "wav" }
