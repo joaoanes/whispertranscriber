@@ -115,7 +115,7 @@ class RecorderViewModel: ObservableObject {
         let tokenizerVariant = getTokenizerVariant(for: SettingsManager.shared.selectedModel)
 
         // Download tokenizer
-        _ = try await loadTokenizer(for: tokenizerVariant, tokenizerFolder: tokenizerPath, useBackgroundSession: false)
+        _ = try await ModelUtilities.loadTokenizer(for: tokenizerVariant)
         
         // Move model to cache
         if fm.fileExists(atPath: modelURL.path) {
