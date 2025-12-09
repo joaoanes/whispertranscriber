@@ -7,7 +7,7 @@ final class UtilsTests: XCTestCase {
     func testTempURLHasCachesDirectory() {
         let url = tempURL()
 
-        XCTAssertTrue(url.path.contains("Caches"))
+        XCTAssertTrue(url.path.contains("Application Support"))
     }
 
     func testTempURLHasWavExtension() {
