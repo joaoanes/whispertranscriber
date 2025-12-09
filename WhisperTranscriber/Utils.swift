@@ -44,6 +44,25 @@ func getRecordingsDirectory() -> URL? {
     return recordingsDirectory
 }
 
+func getModelsDirectory() -> URL? {
+    guard let applicationSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+        return nil
+    }
+    let modelsDirectory = applicationSupport
+        .appendingPathComponent("WhisperTranscriber")
+        .appendingPathComponent("Models")
+
+    if !FileManager.default.fileExists(atPath: modelsDirectory.path) {
+        do {
+            try FileManager.default.createDirectory(at: modelsDirectory, withIntermediateDirectories: true, attributes: nil)
+        } catch {
+            print("Error creating models directory: \(error)")
+            return nil
+        }
+    }
+    return modelsDirectory
+}
+
 func tempURL() -> URL {
     guard let recordingsDir = getRecordingsDirectory() else {
         // Fallback to temp directory if Application Support is unavailable

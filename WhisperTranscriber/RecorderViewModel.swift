@@ -55,10 +55,14 @@ class RecorderViewModel: ObservableObject {
 
     private func setupLiteModels() async throws -> String {
         let fm = FileManager.default
-        let cacheURL = try getCacheDirectory()
+        let modelsURL = try getModelsDirectoryInternal()
+
         let selectedModel = SettingsManager.shared.selectedModel
-        let modelPathURL = cacheURL.appendingPathComponent("hf/models/argmaxinc/whisperkit-coreml/\(selectedModel)")
-        let tokenizerPathURL = cacheURL.appendingPathComponent("hf/")
+        let modelPathURL = modelsURL.appendingPathComponent("hf/models/argmaxinc/whisperkit-coreml/\(selectedModel)")
+        let tokenizerPathURL = modelsURL.appendingPathComponent("hf/")
+
+        // Check for models in old cache directory and migrate if possible
+        migrateOldModels(to: modelPathURL, fileManager: fm)
         
         if fm.fileExists(atPath: modelPathURL.path) {
             print("✅ Models already exist at", modelPathURL.path)
@@ -74,14 +78,30 @@ class RecorderViewModel: ObservableObject {
         return modelPathURL.path
     }
 
-    private func getCacheDirectory() throws -> URL {
-        let fm = FileManager.default
-        guard let cacheURL = fm.urls(for: .cachesDirectory, in: .userDomainMask).first else {
-            throw NSError(domain: "AppError", code: 2, userInfo: [NSLocalizedDescriptionKey: "Could not get cache directory."])
+    private func getModelsDirectoryInternal() throws -> URL {
+        guard let modelsDir = getModelsDirectory() else {
+            throw NSError(domain: "AppError", code: 3, userInfo: [NSLocalizedDescriptionKey: "Could not get models directory."])
         }
-        let appCacheURL = cacheURL.appendingPathComponent(Bundle.main.bundleIdentifier ?? "com.joaoanes.WhisperTranscriberLite")
-        try fm.createDirectory(at: appCacheURL, withIntermediateDirectories: true, attributes: nil)
-        return appCacheURL
+        return modelsDir
+    }
+
+    private func migrateOldModels(to newModelURL: URL, fileManager fm: FileManager) {
+        guard let cacheURL = fm.urls(for: .cachesDirectory, in: .userDomainMask).first else { return }
+        let oldAppCacheURL = cacheURL.appendingPathComponent(Bundle.main.bundleIdentifier ?? "com.joaoanes.WhisperTranscriberLite")
+
+        let selectedModel = SettingsManager.shared.selectedModel
+        let oldModelPathURL = oldAppCacheURL.appendingPathComponent("hf/models/argmaxinc/whisperkit-coreml/\(selectedModel)")
+
+        if fm.fileExists(atPath: oldModelPathURL.path) && !fm.fileExists(atPath: newModelURL.path) {
+            print("📦 Migrating models from Cache to Application Support...")
+            do {
+                try fm.createDirectory(at: newModelURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
+                try fm.moveItem(at: oldModelPathURL, to: newModelURL)
+                print("✅ Migration successful.")
+            } catch {
+                print("❌ Migration failed: \(error)")
+            }
+        }
     }
 
     private func getTokenizerVariant(for model: String) -> ModelVariant {
@@ -117,7 +137,7 @@ class RecorderViewModel: ObservableObject {
         // Download tokenizer
         _ = try await ModelUtilities.loadTokenizer(for: tokenizerVariant)
         
-        // Move model to cache
+        // Move model to destination
         if fm.fileExists(atPath: modelURL.path) {
             try fm.removeItem(at: modelURL)
         }

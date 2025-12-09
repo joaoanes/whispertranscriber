@@ -13,7 +13,7 @@ final class RecordingsManagerTests: XCTestCase {
         recordingsManager = RecordingsManager.shared
         fileManager = FileManager.default
 
-        if let cacheDir = recordingsManager.cacheDirectory {
+        if let cacheDir = recordingsManager.recordingsDirectory {
             testCacheDirectory = cacheDir
         }
     }
@@ -22,8 +22,8 @@ final class RecordingsManagerTests: XCTestCase {
         try await super.tearDown()
     }
 
-    func testCacheDirectoryExists() {
-        XCTAssertNotNil(recordingsManager.cacheDirectory)
+    func testRecordingsDirectoryExists() {
+        XCTAssertNotNil(recordingsManager.recordingsDirectory)
     }
 
     func testRecordingsArrayIsInitialized() {
