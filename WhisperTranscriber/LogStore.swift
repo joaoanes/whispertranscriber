@@ -140,8 +140,8 @@ class LogStore: ObservableObject {
         // Atomic update: create new array with existing + new entries, then trim
         // This triggers only ONE SwiftUI update instead of two
         var updatedMessages = logMessages + newEntries
-        if updatedMessages.count > 100 {
-            updatedMessages = Array(updatedMessages.suffix(100))
+        if updatedMessages.count > 300 {
+            updatedMessages = Array(updatedMessages.suffix(300))
         }
         logMessages = updatedMessages
     }
