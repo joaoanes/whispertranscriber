@@ -1,19 +1,17 @@
 import SwiftUI
 import Carbon
 import WhisperKit
+import OSLog
 
 @main
 struct WhisperTranscriberApp: App {
     @StateObject private var vm = RecorderViewModel.shared
     @StateObject private var settings = SettingsManager.shared
-    @StateObject private var logStore = LogStore.shared
 
-    @State private var logWindowController: LogWindowController?
     @State private var recordsWindowController: RecordsWindowController?
 
     init() {
         CrashHandler.shared.setup()
-        let _ = LogStore.shared
         HotKeyManager.shared.register(chord: settings.hotkey) {
             Task { @MainActor in
                 RecorderViewModel.shared.toggleRecording()
@@ -22,7 +20,7 @@ struct WhisperTranscriberApp: App {
 
         Logging.shared.logLevel = .debug
         Logging.shared.loggingCallback = { message in
-            print("[WhisperKit]: \(message)")
+            Logger.whisper.debug("\(message, privacy: .public)")
         }
     }
 
@@ -36,18 +34,6 @@ struct WhisperTranscriberApp: App {
         .commands {
             appCommands
         }
-    }
-
-    private func showLogs() {
-        if logWindowController == nil {
-            let controller = LogWindowController()
-            controller.onWindowClose = { [self] in
-                self.logWindowController = nil
-            }
-            self.logWindowController = controller
-        }
-        logWindowController?.showWindow(nil)
-        NSApp.activate(ignoringOtherApps: true)
     }
 
     private func showRecords() {
@@ -67,11 +53,6 @@ private extension WhisperTranscriberApp {
     @CommandsBuilder
     var appCommands: some Commands {
         CommandGroup(after: .appInfo) {
-            Button("Show Logs") {
-                showLogs()
-            }
-            .keyboardShortcut("l", modifiers: [.command, .control])
-
             Button("Show Records") {
                 showRecords()
             }

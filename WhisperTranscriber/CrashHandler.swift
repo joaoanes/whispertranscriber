@@ -1,5 +1,6 @@
 import Foundation
 import AppKit
+import OSLog
 
 private func globalSignalHandler(_ signal: Int32) {
     CrashHandler.shared.handleSignal(signal)
@@ -32,6 +33,8 @@ class CrashHandler {
         Stack Trace:
         \(exception.callStackSymbols.joined(separator: "\n"))
         """
+
+        Logger.crash.fault("\(message, privacy: .public)")
         presentCrashWindow(message: message)
     }
 
@@ -54,6 +57,7 @@ class CrashHandler {
         \(Thread.callStackSymbols.joined(separator: "\n"))
         """
 
+        Logger.crash.fault("\(message, privacy: .public)")
         presentCrashWindow(message: message)
     }
 
