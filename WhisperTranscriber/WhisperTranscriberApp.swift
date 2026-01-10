@@ -12,6 +12,7 @@ struct WhisperTranscriberApp: App {
     @State private var recordsWindowController: RecordsWindowController?
 
     init() {
+        CrashHandler.shared.setup()
         let _ = LogStore.shared
         HotKeyManager.shared.register(chord: settings.hotkey) {
             Task { @MainActor in
@@ -75,6 +76,14 @@ private extension WhisperTranscriberApp {
                 showRecords()
             }
             .keyboardShortcut("r", modifiers: [.command, .control])
+
+            #if DEBUG
+            Divider()
+            Button("Simulate Crash") {
+                fatalError("Simulated Crash triggered by user")
+            }
+            .keyboardShortcut("k", modifiers: [.command, .option, .shift])
+            #endif
         }
     }
 }
