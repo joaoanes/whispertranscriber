@@ -37,7 +37,7 @@ func getRecordingsDirectory() -> URL? {
         do {
             try FileManager.default.createDirectory(at: recordingsDirectory, withIntermediateDirectories: true, attributes: nil)
         } catch {
-            print("Error creating recordings directory: \(error)")
+            Log.general.error("Error creating recordings directory: \(error.localizedDescription))")
             return nil
         }
     }
@@ -56,7 +56,7 @@ func getModelsDirectory() -> URL? {
         do {
             try FileManager.default.createDirectory(at: modelsDirectory, withIntermediateDirectories: true, attributes: nil)
         } catch {
-            print("Error creating models directory: \(error)")
+            Log.general.error("Error creating models directory: \(error.localizedDescription))")
             return nil
         }
     }

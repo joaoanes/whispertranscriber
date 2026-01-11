@@ -34,9 +34,9 @@ class RecorderViewModel: ObservableObject {
             whisperKit = try await WhisperKit(config)
 
             isPrewarming = false
-            print("✅ Pre-warming complete")
+            Log.whisperKit.info("✅ Pre-warming complete")
         } catch {
-            print("❌ Error during pre-warming:", error)
+            Log.whisperKit.error("❌ Error during pre-warming: \(error.localizedDescription))")
             errorMessage = "Error during pre-warming: \(error.localizedDescription)"
             isPrewarming = false
         }
@@ -46,7 +46,7 @@ class RecorderViewModel: ObservableObject {
         let selectedModel = SettingsManager.shared.selectedModel
         if let bundlePath = Bundle.main.resourceURL?.appendingPathComponent("hf/models/argmaxinc/whisperkit-coreml/\(selectedModel)") {
              if FileManager.default.fileExists(atPath: bundlePath.path) {
-                 print("✅ Found models in app bundle at", bundlePath.path)
+                 Log.general.info("✅ Found models in app bundle at \(bundlePath.path))")
                  return bundlePath.path
              }
         }
@@ -65,14 +65,14 @@ class RecorderViewModel: ObservableObject {
         migrateOldModels(to: modelPathURL, fileManager: fm)
         
         if fm.fileExists(atPath: modelPathURL.path) {
-            print("✅ Models already exist at", modelPathURL.path)
+            Log.general.info("✅ Models already exist at \(modelPathURL.path))")
             return modelPathURL.path
         }
         
         isDownloading = true
         defer { isDownloading = false }
         
-        print("⬇️ Downloading models...")
+        Log.general.info("⬇️ Downloading models...")
         try await downloadAndInstallModels(to: modelPathURL, tokenizerPath: tokenizerPathURL, fileManager: fm)
         
         return modelPathURL.path
@@ -93,13 +93,13 @@ class RecorderViewModel: ObservableObject {
         let oldModelPathURL = oldAppCacheURL.appendingPathComponent("hf/models/argmaxinc/whisperkit-coreml/\(selectedModel)")
 
         if fm.fileExists(atPath: oldModelPathURL.path) && !fm.fileExists(atPath: newModelURL.path) {
-            print("📦 Migrating models from Cache to Application Support...")
+            Log.general.info("📦 Migrating models from Cache to Application Support...")
             do {
                 try fm.createDirectory(at: newModelURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
                 try fm.moveItem(at: oldModelPathURL, to: newModelURL)
-                print("✅ Migration successful.")
+                Log.general.info("✅ Migration successful.")
             } catch {
-                print("❌ Migration failed: \(error)")
+                Log.general.error("❌ Migration failed: \(error.localizedDescription))")
             }
         }
     }
@@ -143,7 +143,7 @@ class RecorderViewModel: ObservableObject {
         }
         try fm.createDirectory(at: modelURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         try fm.moveItem(at: downloadedModelURL, to: modelURL)
-        print("✅ Models downloaded and installed.")
+        Log.general.info("✅ Models downloaded and installed.")
     }
 
     func toggleRecording() {
@@ -183,16 +183,16 @@ class RecorderViewModel: ObservableObject {
             recorder?.prepareToRecord()
             if recorder?.record() == true {
                 isRecording = true
-                print("▶️ Recording started at", url.path)
+                Log.recording.info("▶️ Recording started at \(url.path))")
             } else {
-                print("❌ Recorder failed to start")
+                Log.recording.error("❌ Recorder failed to start")
                 if SettingsManager.shared.fadeVolumeEnabled {
                     let fadeDuration = Double(SettingsManager.shared.fadeMilliseconds) / 1000.0
                     AudioFade.shared.fadeIn(duration: fadeDuration)
                 }
             }
         } catch {
-            print("❌ Failed to set up recorder:", error)
+            Log.recording.error("❌ Failed to set up recorder: \(error.localizedDescription))")
             if SettingsManager.shared.fadeVolumeEnabled {
                 let fadeDuration = Double(SettingsManager.shared.fadeMilliseconds) / 1000.0
                 AudioFade.shared.fadeIn(duration: fadeDuration)
@@ -203,7 +203,7 @@ class RecorderViewModel: ObservableObject {
     private func stopRecording() {
         recorder?.stop()
         if recorder?.isRecording == true {
-            print("❌ Failed to stop the recorder")
+            Log.recording.error("❌ Failed to stop the recorder")
             return
         }
         isRecording = false
@@ -214,30 +214,30 @@ class RecorderViewModel: ObservableObject {
         }
 
         guard let url = recorder?.url else {
-            print("❌ No audio file URL")
+            Log.recording.error("❌ No audio file URL")
             return
         }
-        print("⏹️ Stopped. File at:", url.path)
+        Log.recording.info("⏹️ Stopped. File at: \(url.path))")
 
         Task {
             defer { isTranscribing = false }
             isTranscribing = true
             guard let kit = whisperKit else {
-                print("❌ WhisperKit not ready")
+                Log.whisperKit.error("❌ WhisperKit not ready")
                 return
             }
             do {
                 let results = try await kit.transcribe(audioPath: url.path)
                 let text = results.first?.text ?? ""
                 lastTranscript = text + SettingsManager.shared.suffix
-                print("📝 Transcription:", text)
+                Log.whisperKit.info("📝 Transcription: \(text))")
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(lastTranscript, forType: .string)
 
                 // Add to our in-memory cache
                 RecordingsManager.shared.addTranscription(for: url, text: lastTranscript)
             } catch {
-                print("❌ Transcription error:", error)
+                Log.whisperKit.error("❌ Transcription error: \(error.localizedDescription))")
                 errorMessage = "Transcription error: \(error.localizedDescription)"
             }
         }
@@ -248,19 +248,19 @@ class RecorderViewModel: ObservableObject {
             isTranscribing = true
             defer { isTranscribing = false }
             guard let kit = whisperKit else {
-                print("❌ WhisperKit not ready")
+                Log.whisperKit.error("❌ WhisperKit not ready")
                 return
             }
             do {
                 let results = try await kit.transcribe(audioPath: url.path)
                 let text = results.first?.text ?? ""
                 let transcript = text + SettingsManager.shared.suffix
-                print("📝 Re-transcription:", transcript)
+                Log.whisperKit.info("📝 Re-transcription: \(transcript))")
 
                 // Add to our in-memory cache
                 RecordingsManager.shared.addTranscription(for: url, text: transcript)
             } catch {
-                print("❌ Re-transcription error:", error)
+                Log.whisperKit.error("❌ Re-transcription error: \(error.localizedDescription))")
                 errorMessage = "Re-transcription error: \(error.localizedDescription)"
             }
         }
