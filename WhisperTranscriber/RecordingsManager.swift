@@ -33,20 +33,20 @@ class RecordingsManager: ObservableObject {
                 if !fileManager.fileExists(atPath: destination.path) {
                     do {
                         try fileManager.moveItem(at: file, to: destination)
-                        print("Migrated recording: \(file.lastPathComponent)")
+                        Log.recording.info("Migrated recording: \(file.lastPathComponent))")
                     } catch {
-                        print("Failed to migrate recording \(file.lastPathComponent): \(error)")
+                        Log.recording.error("Failed to migrate recording \(file.lastPathComponent)): \(error.localizedDescription))")
                     }
                 }
             }
         } catch {
-            print("Error checking old cache directory for migration: \(error)")
+            Log.recording.error("Error checking old cache directory for migration: \(error.localizedDescription))")
         }
     }
 
     func scanForRecordings() {
         guard let recordingsDirectory = recordingsDirectory else {
-            print("Error: Could not determine recordings directory.")
+            Log.recording.error("Error: Could not determine recordings directory.")
             self.recordings = []
             return
         }
@@ -62,7 +62,7 @@ class RecordingsManager: ObservableObject {
                     return date1 ?? .distantPast > date2 ?? .distantPast
                 })
         } catch {
-            print("Error scanning for recordings: \(error)")
+            Log.recording.error("Error scanning for recordings: \(error.localizedDescription))")
             self.recordings = []
         }
     }

@@ -25,13 +25,8 @@ class CrashHandler {
     }
 
     func handleException(_ exception: NSException) {
-        let message = """
-        Uncaught Exception: \(exception.name.rawValue)
-        Reason: \(exception.reason ?? "Unknown")
-
-        Stack Trace:
-        \(exception.callStackSymbols.joined(separator: "\n"))
-        """
+        let message = "Uncaught Exception: \(exception.name.rawValue)\nReason: \(exception.reason ?? "Unknown")\n\nStack Trace:\n\(exception.callStackSymbols.joined(separator: "\n"))"
+        Log.general.fault("Uncaught Exception: \(exception.name.rawValue))\nReason: \(exception.reason ?? "Unknown"))\nStack Trace:\n\(exception.callStackSymbols.joined(separator: "\n")))")
         presentCrashWindow(message: message)
     }
 
@@ -46,14 +41,9 @@ class CrashHandler {
         default: break
         }
 
-        let message = """
-        Application Crashed
-        Signal: \(signalName)
-
-        Stack Trace:
-        \(Thread.callStackSymbols.joined(separator: "\n"))
-        """
-
+        let message = "Application Crashed\nSignal: \(signalName)\n\nStack Trace:\n\(Thread.callStackSymbols.joined(separator: "\n"))"
+        Log.general.fault("Application Crashed\nSignal: \(signalName))\nStack Trace:\n\(Thread.callStackSymbols.joined(separator: "\n")))")
+        
         presentCrashWindow(message: message)
     }
 
@@ -83,8 +73,9 @@ class CrashHandler {
             // This blocks until the user clicks the button
             alert.runModal()
 
-            // Force exit after user dismisses
-            exit(1)
+            // We don't exit(1) anymore because we want the system to generate a crash report (.ips)
+            // if we are in a signal handler or uncaught exception.
+            // Returning will let the app continue to its demise.
         }
 
         if Thread.isMainThread {
@@ -100,13 +91,14 @@ class CrashHandler {
     }
 
     private func saveCrashLog(_ message: String) -> String? {
-        guard let applicationSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-            return nil
-        }
-
-        let crashDir = applicationSupport
+        let fileManager = FileManager.default
+        // Use getpwuid to get the real home directory, bypassing sandbox container
+        guard let pw = getpwuid(getuid()), let home = pw.pointee.pw_dir else { return nil }
+        let homeDir = String(cString: home)
+        let crashDir = URL(fileURLWithPath: homeDir)
+            .appendingPathComponent("Library")
+            .appendingPathComponent("Logs")
             .appendingPathComponent("WhisperTranscriber")
-            .appendingPathComponent("CrashLogs")
 
         do {
             if !FileManager.default.fileExists(atPath: crashDir.path) {
@@ -121,7 +113,7 @@ class CrashHandler {
             try message.write(to: fileURL, atomically: true, encoding: .utf8)
             return fileURL.path
         } catch {
-            print("Failed to save crash log: \(error)")
+            Log.general.error("Failed to save crash log: \(error.localizedDescription))")
             return nil
         }
     }

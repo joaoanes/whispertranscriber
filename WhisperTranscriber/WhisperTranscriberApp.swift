@@ -6,14 +6,12 @@ import WhisperKit
 struct WhisperTranscriberApp: App {
     @StateObject private var vm = RecorderViewModel.shared
     @StateObject private var settings = SettingsManager.shared
-    @StateObject private var logStore = LogStore.shared
 
-    @State private var logWindowController: LogWindowController?
     @State private var recordsWindowController: RecordsWindowController?
 
     init() {
+        Log.setupFileLogging()
         CrashHandler.shared.setup()
-        let _ = LogStore.shared
         HotKeyManager.shared.register(chord: settings.hotkey) {
             Task { @MainActor in
                 RecorderViewModel.shared.toggleRecording()
@@ -22,7 +20,7 @@ struct WhisperTranscriberApp: App {
 
         Logging.shared.logLevel = .debug
         Logging.shared.loggingCallback = { message in
-            print("[WhisperKit]: \(message)")
+            Log.whisperKit.debug(message)
         }
     }
 
@@ -38,17 +36,6 @@ struct WhisperTranscriberApp: App {
         }
     }
 
-    private func showLogs() {
-        if logWindowController == nil {
-            let controller = LogWindowController()
-            controller.onWindowClose = { [self] in
-                self.logWindowController = nil
-            }
-            self.logWindowController = controller
-        }
-        logWindowController?.showWindow(nil)
-        NSApp.activate(ignoringOtherApps: true)
-    }
 
     private func showRecords() {
         if recordsWindowController == nil {
@@ -67,23 +54,10 @@ private extension WhisperTranscriberApp {
     @CommandsBuilder
     var appCommands: some Commands {
         CommandGroup(after: .appInfo) {
-            Button("Show Logs") {
-                showLogs()
-            }
-            .keyboardShortcut("l", modifiers: [.command, .control])
-
             Button("Show Records") {
                 showRecords()
             }
             .keyboardShortcut("r", modifiers: [.command, .control])
-
-            #if DEBUG
-            Divider()
-            Button("Simulate Crash") {
-                fatalError("Simulated Crash triggered by user")
-            }
-            .keyboardShortcut("k", modifiers: [.command, .option, .shift])
-            #endif
         }
     }
 }

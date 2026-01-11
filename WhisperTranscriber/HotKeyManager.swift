@@ -30,7 +30,7 @@ final class HotKeyManager {
         guard let lastChar = chord.last(where: { $0.isLetter || $0.isNumber }),
               let vk = virtualKeyCode(for: lastChar)
         else {
-            print("❌ couldn’t parse hotkey:", chord)
+            Log.hotkey.error("❌ couldn't parse hotkey: \(chord))")
             return false
         }
 
@@ -64,10 +64,10 @@ final class HotKeyManager {
 
         if status == noErr {
             self.hotKeyHandler = handler
-            print("✅ Registered", chord, "→ keyCode:", vk, "mods:", modifiers)
+            Log.hotkey.info("✅ Registered \(chord)) → keyCode: \(vk)) mods: \(modifiers))")
             return true
         } else {
-            print("❌ failed to register hotkey:", chord)
+            Log.hotkey.error("❌ failed to register hotkey: \(chord))")
             return false
         }
     }
