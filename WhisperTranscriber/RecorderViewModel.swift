@@ -28,123 +28,36 @@ class RecorderViewModel: ObservableObject {
     func reinitWhisperKit() async {
         isPrewarming = true
         whisperKit = nil
-        do {
-            let modelsPath = try await ensureModelsAreThere()
-            let config = WhisperKitConfig(modelFolder: modelsPath, verbose: true, logLevel: .debug, prewarm: true, load: true, download: false)
-            whisperKit = try await WhisperKit(config)
-
-            isPrewarming = false
-            Log.whisperKit.info("✅ Pre-warming complete")
-        } catch {
-            Log.whisperKit.error("❌ Error during pre-warming: \(error.localizedDescription))")
-            errorMessage = "Error during pre-warming: \(error.localizedDescription)"
-            isPrewarming = false
+        
+        let selectedModel = SettingsManager.shared.selectedModel
+        
+        // prevent blocking the Main Thread so we don't get reaped
+        let kit = await Task.detached(priority: .userInitiated) { [weak self] () -> WhisperKit? in
+             do {
+                 let modelsPath = try await WhisperModelLoader.ensureModelsAreThere(selectedModel: selectedModel) { progress in
+                     Task { @MainActor in
+                         self?.downloadProgress = progress
+                     }
+                 }
+                 let config = WhisperKitConfig(modelFolder: modelsPath, verbose: true, logLevel: .debug, prewarm: true, load: true, download: false)
+                 let wk = try await WhisperKit(config)
+                 Log.whisperKit.info("✅ Pre-warming complete")
+                 return wk
+             } catch {
+                 Log.whisperKit.error("❌ Error during pre-warming: \(error.localizedDescription)")
+                 return nil
+             }
+        }.value
+        
+        if let kit = kit {
+            self.whisperKit = kit
+        } else {
+             errorMessage = "Error initializing WhisperKit"
         }
+        
+        isPrewarming = false
     }
     
-    private func ensureModelsAreThere() async throws -> String {
-        let selectedModel = SettingsManager.shared.selectedModel
-        if let bundlePath = Bundle.main.resourceURL?.appendingPathComponent("hf/models/argmaxinc/whisperkit-coreml/\(selectedModel)") {
-             if FileManager.default.fileExists(atPath: bundlePath.path) {
-                 Log.general.info("✅ Found models in app bundle at \(bundlePath.path))")
-                 return bundlePath.path
-             }
-        }
-        return try await setupLiteModels()
-    }
-
-    private func setupLiteModels() async throws -> String {
-        let fm = FileManager.default
-        let modelsURL = try getModelsDirectoryInternal()
-
-        let selectedModel = SettingsManager.shared.selectedModel
-        let modelPathURL = modelsURL.appendingPathComponent("hf/models/argmaxinc/whisperkit-coreml/\(selectedModel)")
-        let tokenizerPathURL = modelsURL.appendingPathComponent("hf/")
-
-        // Check for models in old cache directory and migrate if possible
-        migrateOldModels(to: modelPathURL, fileManager: fm)
-        
-        if fm.fileExists(atPath: modelPathURL.path) {
-            Log.general.info("✅ Models already exist at \(modelPathURL.path))")
-            return modelPathURL.path
-        }
-        
-        isDownloading = true
-        defer { isDownloading = false }
-        
-        Log.general.info("⬇️ Downloading models...")
-        try await downloadAndInstallModels(to: modelPathURL, tokenizerPath: tokenizerPathURL, fileManager: fm)
-        
-        return modelPathURL.path
-    }
-
-    private func getModelsDirectoryInternal() throws -> URL {
-        guard let modelsDir = getModelsDirectory() else {
-            throw NSError(domain: "AppError", code: 3, userInfo: [NSLocalizedDescriptionKey: "Could not get models directory."])
-        }
-        return modelsDir
-    }
-
-    private func migrateOldModels(to newModelURL: URL, fileManager fm: FileManager) {
-        guard let cacheURL = fm.urls(for: .cachesDirectory, in: .userDomainMask).first else { return }
-        let oldAppCacheURL = cacheURL.appendingPathComponent(Bundle.main.bundleIdentifier ?? "com.joaoanes.WhisperTranscriberLite")
-
-        let selectedModel = SettingsManager.shared.selectedModel
-        let oldModelPathURL = oldAppCacheURL.appendingPathComponent("hf/models/argmaxinc/whisperkit-coreml/\(selectedModel)")
-
-        if fm.fileExists(atPath: oldModelPathURL.path) && !fm.fileExists(atPath: newModelURL.path) {
-            Log.general.info("📦 Migrating models from Cache to Application Support...")
-            do {
-                try fm.createDirectory(at: newModelURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
-                try fm.moveItem(at: oldModelPathURL, to: newModelURL)
-                Log.general.info("✅ Migration successful.")
-            } catch {
-                Log.general.error("❌ Migration failed: \(error.localizedDescription))")
-            }
-        }
-    }
-
-    private func getTokenizerVariant(for model: String) -> ModelVariant {
-        if model.contains("large-v3") {
-            return .largev3
-        } else if model.contains("large-v2") {
-            return .largev2
-        } else if model.contains("medium") {
-            return .medium
-        } else if model.contains("small") {
-            return .small
-        } else if model.contains("base") {
-            return .base
-        } else if model.contains("tiny") {
-            return .tiny
-        } else if model.contains("distil-large-v3") {
-            return .largev3
-        } else {
-            return .largev3
-        }
-    }
-
-    private func downloadAndInstallModels(to modelURL: URL, tokenizerPath: URL, fileManager fm: FileManager) async throws {
-        // Download model
-        let downloadedModelURL = try await WhisperKit.download(variant: SettingsManager.shared.selectedModel) { progress in
-            DispatchQueue.main.async {
-                self.downloadProgress = progress.fractionCompleted
-            }
-        }
-        
-        let tokenizerVariant = getTokenizerVariant(for: SettingsManager.shared.selectedModel)
-
-        // Download tokenizer
-        _ = try await ModelUtilities.loadTokenizer(for: tokenizerVariant)
-        
-        // Move model to destination
-        if fm.fileExists(atPath: modelURL.path) {
-            try fm.removeItem(at: modelURL)
-        }
-        try fm.createDirectory(at: modelURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try fm.moveItem(at: downloadedModelURL, to: modelURL)
-        Log.general.info("✅ Models downloaded and installed.")
-    }
 
     func toggleRecording() {
         if isRecording {

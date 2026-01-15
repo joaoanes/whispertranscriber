@@ -2,27 +2,41 @@ import SwiftUI
 import Carbon
 import WhisperKit
 
-@main
-struct WhisperTranscriberApp: App {
-    @StateObject private var vm = RecorderViewModel.shared
-    @StateObject private var settings = SettingsManager.shared
+class AppDelegate: NSObject, NSApplicationDelegate {
+    // Hold a strong reference to the activity token to keep the app alive
+    var lifetimeActivity: NSObjectProtocol?
 
-    @State private var recordsWindowController: RecordsWindowController?
-
-    init() {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        // Create a focused activity to stop the OS from killing the app as "NonInteractive"
+        self.lifetimeActivity = ProcessInfo.processInfo.beginActivity(
+            options: [.userInitiated, .suddenTerminationDisabled, .automaticTerminationDisabled],
+            reason: "App operates as an agent and must remain active"
+        )
+        
         Log.setupFileLogging()
         CrashHandler.shared.setup()
-        HotKeyManager.shared.register(chord: settings.hotkey) {
-            Task { @MainActor in
-                RecorderViewModel.shared.toggleRecording()
-            }
+        
+        HotKeyManager.shared.register(chord: SettingsManager.shared.hotkey) {
+             Task { @MainActor in
+                 RecorderViewModel.shared.toggleRecording()
+             }
         }
-
+        
         Logging.shared.logLevel = .debug
         Logging.shared.loggingCallback = { message in
             Log.whisperKit.debug(message)
         }
     }
+}
+
+@main
+struct WhisperTranscriberApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
+    @StateObject private var vm = RecorderViewModel.shared
+    @StateObject private var settings = SettingsManager.shared
+
+    @State private var recordsWindowController: RecordsWindowController?
 
     var body: some Scene {
         MenuBarExtra {
