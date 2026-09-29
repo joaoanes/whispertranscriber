@@ -3,7 +3,7 @@ import SwiftUI
 struct WhisperTranscriberView: View {
     @StateObject private var vm = RecorderViewModel.shared
     @ObservedObject private var settings = SettingsManager.shared
-    
+
     var showRecords: () -> Void
 
     var body: some View {
@@ -20,6 +20,7 @@ struct WhisperTranscriberView: View {
                     settings: settings,
                     isRecording: vm.isRecording,
                     isTranscribing: vm.isTranscribing,
+                    livePreview: vm.livePreview,
                     showRecords: showRecords
                 )
             }
@@ -43,7 +44,7 @@ struct PrewarmingView: View {
     var body: some View {
         VStack {
             if (isDownloading) {
-                Text("WhisperKit is downloading...")
+                Text("Parakeet is downloading...")
                 Text("This just happens once per install")
                     .font(.footnote)
                     .multilineTextAlignment(.center)
@@ -55,13 +56,13 @@ struct PrewarmingView: View {
                     .multilineTextAlignment(.center)
                     .foregroundColor(.secondary)
             } else {
-                Text("WhisperKit is loading...")
-                Text("This can take up to one minute on the first open")
+                Text("Parakeet is loading...")
+                Text("This takes about a second on the Neural Engine")
                     .font(.footnote)
                     .foregroundColor(.secondary)
                 ProgressView()
             }
-            
+
             Button("Quit WhisperTranscriber", action: { NSApp.terminate(nil) })
                 .keyboardShortcut("Q")
         }
@@ -69,11 +70,29 @@ struct PrewarmingView: View {
     }
 }
 
+struct LivePreviewView: View {
+    var text: String
+
+    var body: some View {
+        ScrollView {
+            Text(text)
+                .font(.footnote)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled)
+        }
+        .frame(width: 200, height: 64)
+        .padding(4)
+        .background(Color(NSColor.controlBackgroundColor))
+        .cornerRadius(4)
+    }
+}
+
 struct IdleRecordingView: View {
     @ObservedObject var settings: SettingsManager
-    @StateObject private var vm = RecorderViewModel.shared
     var isRecording: Bool
     var isTranscribing: Bool
+    var livePreview: String
     var showRecords: () -> Void
 
     private func statusText() -> String {
@@ -113,6 +132,14 @@ struct IdleRecordingView: View {
                 .multilineTextAlignment(.center)
                 .frame(width: 80, height: 22)
 
+            Toggle("Live Transcription", isOn: $settings.liveTranscriptionEnabled)
+                .disabled(isRecording)
+                .help("Locked in when a recording starts. Off records silently and transcribes once at the end.")
+
+            Toggle("Detect Speakers", isOn: $settings.speakerDetectionEnabled)
+                .disabled(isRecording)
+                .help("Labels each turn in the final transcript. For conversations, not dictation. Downloads ~130MB the first time.")
+
             DisclosureGroup("Advanced") {
                 VStack(spacing: 4) {
                     Toggle("Fade Volume", isOn: $settings.fadeVolumeEnabled)
@@ -128,23 +155,16 @@ struct IdleRecordingView: View {
                             .frame(width: 80, height: 22)
                     }
 
-                    Text("Model:")
-                        .font(.subheadline)
-                        .disabled(true)
+                    Toggle("Clean Up Text", isOn: $settings.cleanupEnabled)
 
-                    Picker("Model", selection: $settings.selectedModel) {
-                        ForEach(AvailableModels.modelNames, id: \.self) { model in
-                            Text(model).tag(model)
-                        }
+                    if settings.cleanupEnabled {
+                        Toggle("Also Remove \"um\"", isOn: $settings.removeUm)
                     }
-                    .onChange(of: settings.selectedModel) {
-                        Task {
-                            await vm.reinitWhisperKit()
-                        }
-                    }
-                    .labelsHidden()
-                    .frame(width: 200)
                 }
+            }
+
+            if !livePreview.isEmpty {
+                LivePreviewView(text: livePreview)
             }
 
             Text(statusText())
@@ -167,23 +187,34 @@ struct IdleRecordingView: View {
 
 struct WhisperTranscriberView_Previews: PreviewProvider {
     static var previews: some View {
-        
+
         Group {
             PrewarmingView(isDownloading: true, downloadProgress: 0)
                 .previewDisplayName("Downloading")
                 .fixedSize()
-            
+
             PrewarmingView(isDownloading: false, downloadProgress: 0)
                 .previewDisplayName("Prewarming")
                 .fixedSize()
-            
+
             IdleRecordingView(
                 settings: SettingsManager.shared,
                 isRecording: false,
                 isTranscribing: false,
+                livePreview: "",
                 showRecords: {}
             )
             .previewDisplayName("Idle/Recording")
+            .fixedSize()
+
+            IdleRecordingView(
+                settings: SettingsManager.shared,
+                isRecording: true,
+                isTranscribing: false,
+                livePreview: "This is what a live transcript looks like as it streams in.",
+                showRecords: {}
+            )
+            .previewDisplayName("Live Preview")
             .fixedSize()
         }
     }

@@ -7,11 +7,18 @@ class SettingsManager: ObservableObject {
 
     @AppStorage("toggleHotkey") var hotkey: String = "⌥⌘S"
     @AppStorage("transcriptionSuffix") var suffix: String = ""
-    @AppStorage("selectedModel") var selectedModel: String = "openai_whisper-large-v3-v20240930"
     @AppStorage("fadeVolumeEnabled") var fadeVolumeEnabled: Bool = true
     @AppStorage("fadeMilliseconds") var fadeMilliseconds: Int = 500
+    @AppStorage("liveTranscriptionEnabled") var liveTranscriptionEnabled: Bool = true
+    @AppStorage("cleanupEnabled") var cleanupEnabled: Bool = true
+    @AppStorage("removeUm") var removeUm: Bool = false
+    @AppStorage("speakerDetectionEnabled") var speakerDetectionEnabled: Bool = false
+
+    var cleanupOptions: TextCleanupOptions {
+        guard cleanupEnabled else { return .disabled }
+        return TextCleanupOptions(enabled: true, removeUm: removeUm)
+    }
 
     private init() {
-        // We can add any initialization logic here if needed in the future.
     }
 }

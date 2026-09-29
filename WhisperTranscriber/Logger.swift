@@ -7,13 +7,13 @@ struct Log {
     
     // OSLog instances
     private static let osGeneral = Logger(subsystem: subsystem, category: "general")
-    private static let osWhisperKit = Logger(subsystem: subsystem, category: "whisperkit")
+    private static let osSpeech = Logger(subsystem: subsystem, category: "speech")
     private static let osRecording = Logger(subsystem: subsystem, category: "recording")
     private static let osHotkey = Logger(subsystem: subsystem, category: "hotkey")
     
     // Dual-output loggers
     static let general = DualLogger(osLogger: osGeneral, category: "general")
-    static let whisperKit = DualLogger(osLogger: osWhisperKit, category: "whisperkit")
+    static let speech = DualLogger(osLogger: osSpeech, category: "speech")
     static let recording = DualLogger(osLogger: osRecording, category: "recording")
     static let hotkey = DualLogger(osLogger: osHotkey, category: "hotkey")
     

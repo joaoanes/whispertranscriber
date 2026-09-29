@@ -1,6 +1,6 @@
 import SwiftUI
 import Carbon
-import WhisperKit
+import AppKit
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     // Hold a strong reference to the activity token to keep the app alive
@@ -9,9 +9,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Create a focused activity to stop the OS from killing the app as "NonInteractive"
         self.lifetimeActivity = ProcessInfo.processInfo.beginActivity(
-            options: [.userInitiated, .suddenTerminationDisabled, .automaticTerminationDisabled],
-            reason: "App operates as an agent and must remain active"
+             options: [.userInitiated, .suddenTerminationDisabled, .automaticTerminationDisabled],
+             reason: "App operates as an agent and must remain active"
         )
+        
+        // Explicitly disable automatic termination
+        // This reinforces the ProcessInfo assertion against CacheDelete/RunningBoard
+        ProcessInfo.processInfo.disableAutomaticTermination("Agent must remain active")
         
         Log.setupFileLogging()
         CrashHandler.shared.setup()
@@ -20,11 +24,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
              Task { @MainActor in
                  RecorderViewModel.shared.toggleRecording()
              }
-        }
-        
-        Logging.shared.logLevel = .debug
-        Logging.shared.loggingCallback = { message in
-            Log.whisperKit.debug(message)
         }
     }
 }

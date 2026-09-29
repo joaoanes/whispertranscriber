@@ -1,8 +1,7 @@
-import Foundation
-import Dispatch
-import AVFoundation
-import WhisperKit
 import AppKit
+import AVFoundation
+import Dispatch
+import Foundation
 
 @MainActor
 class RecorderViewModel: ObservableObject {
@@ -13,51 +12,52 @@ class RecorderViewModel: ObservableObject {
     @Published private(set) var isPrewarming = true
     @Published private(set) var isTranscribing = false
     @Published private(set) var downloadProgress: Double = 0.0
+    @Published private(set) var livePreview = ""
     @Published var errorMessage: String?
 
-    private var recorder: AVAudioRecorder?
-    private var whisperKit: WhisperKit?
+    private let engine: SpeechTranscribing
+    private let capture: AudioCapturing
+    private var recordingURL: URL?
+    private var previewTask: Task<Void, Never>?
     private var lastTranscript = ""
-    
-    private init() {
+    private(set) var finalizeTask: Task<Void, Never>?
+
+    init(
+        engine: SpeechTranscribing = ParakeetEngine(),
+        capture: AudioCapturing = AudioCapture(),
+        prewarm: Bool = true
+    ) {
+        self.engine = engine
+        self.capture = capture
+        guard prewarm else {
+            isPrewarming = false
+            return
+        }
         Task {
-            await reinitWhisperKit()
+            await reloadEngine()
         }
     }
 
-    func reinitWhisperKit() async {
+    func reloadEngine() async {
         isPrewarming = true
-        whisperKit = nil
-        
-        let selectedModel = SettingsManager.shared.selectedModel
-        
-        // prevent blocking the Main Thread so we don't get reaped
-        let kit = await Task.detached(priority: .userInitiated) { [weak self] () -> WhisperKit? in
-             do {
-                 let modelsPath = try await WhisperModelLoader.ensureModelsAreThere(selectedModel: selectedModel) { progress in
-                     Task { @MainActor in
-                         self?.downloadProgress = progress
-                     }
-                 }
-                 let config = WhisperKitConfig(modelFolder: modelsPath, verbose: true, logLevel: .debug, prewarm: true, load: true, download: false)
-                 let wk = try await WhisperKit(config)
-                 Log.whisperKit.info("✅ Pre-warming complete")
-                 return wk
-             } catch {
-                 Log.whisperKit.error("❌ Error during pre-warming: \(error.localizedDescription)")
-                 return nil
-             }
-        }.value
-        
-        if let kit = kit {
-            self.whisperKit = kit
-        } else {
-             errorMessage = "Error initializing WhisperKit"
+        await engine.unload()
+
+        do {
+            try await engine.prepare { [weak self] progress in
+                Task { @MainActor in
+                    self?.isDownloading = progress < 1.0
+                    self?.downloadProgress = progress
+                }
+            }
+            Log.speech.info("✅ Pre-warming complete")
+        } catch {
+            Log.speech.error("❌ Error during pre-warming: \(error.localizedDescription)")
+            errorMessage = "Error initializing the speech engine: \(error.localizedDescription)"
         }
-        
+
+        isDownloading = false
         isPrewarming = false
     }
-    
 
     func toggleRecording() {
         if isRecording {
@@ -76,106 +76,135 @@ class RecorderViewModel: ObservableObject {
         }
     }
 
-    private func beginRecorder() {
+    func beginRecorder() {
         let url = tempURL()
-        let settings: [String: Any] = [
-            AVFormatIDKey:          kAudioFormatLinearPCM,
-            AVSampleRateKey:        16_000,
-            AVNumberOfChannelsKey:  1,
-            AVLinearPCMBitDepthKey: 16,
-            AVLinearPCMIsFloatKey:  false
-        ]
+
+        let live = SettingsManager.shared.liveTranscriptionEnabled
 
         do {
-            if SettingsManager.shared.fadeVolumeEnabled {
-                let fadeDuration = Double(SettingsManager.shared.fadeMilliseconds) / 1000.0
-                AudioFade.shared.fadeOut(duration: fadeDuration)
-            }
-
-            recorder = try AVAudioRecorder(url: url, settings: settings)
-            recorder?.prepareToRecord()
-            if recorder?.record() == true {
-                isRecording = true
-                Log.recording.info("▶️ Recording started at \(url.path))")
-            } else {
-                Log.recording.error("❌ Recorder failed to start")
-                if SettingsManager.shared.fadeVolumeEnabled {
-                    let fadeDuration = Double(SettingsManager.shared.fadeMilliseconds) / 1000.0
-                    AudioFade.shared.fadeIn(duration: fadeDuration)
+            fadeOutIfEnabled()
+            let chunks = try capture.start(writingTo: url, emittingChunks: live)
+            recordingURL = url
+            isRecording = true
+            livePreview = ""
+            if let chunks {
+                previewTask = Task { [weak self] in
+                    await self?.followLivePreview(chunks, for: url)
                 }
             }
+            Log.recording.info("▶️ Recording started at \(url.path)) (live transcription: \(live))")
         } catch {
             Log.recording.error("❌ Failed to set up recorder: \(error.localizedDescription))")
-            if SettingsManager.shared.fadeVolumeEnabled {
-                let fadeDuration = Double(SettingsManager.shared.fadeMilliseconds) / 1000.0
-                AudioFade.shared.fadeIn(duration: fadeDuration)
-            }
+            errorMessage = "Could not start recording: \(error.localizedDescription)"
+            fadeInIfEnabled()
         }
     }
 
-    private func stopRecording() {
-        recorder?.stop()
-        if recorder?.isRecording == true {
-            Log.recording.error("❌ Failed to stop the recorder")
-            return
+    private func followLivePreview(_ chunks: AsyncStream<[Float]>, for url: URL) async {
+        await engine.resetSpeechBoundaries()
+        var accumulator = LivePreviewAccumulator()
+
+        for await chunk in chunks {
+            guard let boundary = try? await engine.speechEndIndex(in: chunk) else { continue }
+
+            let captured = capture.samples
+            guard let segment = accumulator.claimSegment(
+                upTo: boundary,
+                capturedCount: captured.count
+            ) else { continue }
+
+            guard let text = try? await engine.transcribe(Array(captured[segment])), !text.isEmpty
+            else { continue }
+
+            accumulator.append(text)
+            livePreview = accumulator.text
+            Log.speech.info("📝 Live segment: \(text)")
+            RecordingsManager.shared.addTranscription(for: url, text: livePreview)
         }
+    }
+
+    func stopRecording() {
+        capture.stop()
         isRecording = false
+        fadeInIfEnabled()
 
-        if SettingsManager.shared.fadeVolumeEnabled {
-            let fadeDuration = Double(SettingsManager.shared.fadeMilliseconds) / 1000.0
-            AudioFade.shared.fadeIn(duration: fadeDuration)
-        }
-
-        guard let url = recorder?.url else {
+        guard let url = recordingURL else {
             Log.recording.error("❌ No audio file URL")
             return
         }
         Log.recording.info("⏹️ Stopped. File at: \(url.path))")
 
-        Task {
+        let captured = capture.samples
+        let draining = previewTask
+        previewTask = nil
+
+        finalizeTask = Task {
+            await draining?.value
             defer { isTranscribing = false }
             isTranscribing = true
-            guard let kit = whisperKit else {
-                Log.whisperKit.error("❌ WhisperKit not ready")
+            await transcribeAndPublish(captured, for: url)
+        }
+    }
+
+    private func finalTranscript(for samples: [Float]) async throws -> String? {
+        let speech = try await engine.speechOnly(samples)
+        guard !speech.isEmpty else { return nil }
+
+        let text = SettingsManager.shared.speakerDetectionEnabled
+            ? try await engine.transcribeWithSpeakers(speech)
+            : try await engine.transcribe(speech)
+        let cleaned = TextCleanup.apply(to: text, options: SettingsManager.shared.cleanupOptions)
+        return cleaned + SettingsManager.shared.suffix
+    }
+
+    private func transcribeAndPublish(_ samples: [Float], for url: URL) async {
+        do {
+            guard let transcript = try await finalTranscript(for: samples) else {
+                Log.speech.info("🔇 No speech detected, skipping transcription")
+                livePreview = ""
                 return
             }
-            do {
-                let results = try await kit.transcribe(audioPath: url.path)
-                let text = results.first?.text ?? ""
-                lastTranscript = text + SettingsManager.shared.suffix
-                Log.whisperKit.info("📝 Transcription: \(text))")
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(lastTranscript, forType: .string)
 
-                // Add to our in-memory cache
-                RecordingsManager.shared.addTranscription(for: url, text: lastTranscript)
-            } catch {
-                Log.whisperKit.error("❌ Transcription error: \(error.localizedDescription))")
-                errorMessage = "Transcription error: \(error.localizedDescription)"
-            }
+            lastTranscript = transcript
+            Log.speech.info("📝 Transcription: \(transcript))")
+
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(transcript, forType: .string)
+            RecordingsManager.shared.addTranscription(for: url, text: transcript)
+            livePreview = ""
+        } catch {
+            Log.speech.error("❌ Transcription error: \(error.localizedDescription))")
+            errorMessage = "Transcription error: \(error.localizedDescription)"
         }
     }
 
     func retranscribe(url: URL) {
-        Task {
+        finalizeTask = Task {
             isTranscribing = true
             defer { isTranscribing = false }
-            guard let kit = whisperKit else {
-                Log.whisperKit.error("❌ WhisperKit not ready")
-                return
-            }
             do {
-                let results = try await kit.transcribe(audioPath: url.path)
-                let text = results.first?.text ?? ""
-                let transcript = text + SettingsManager.shared.suffix
-                Log.whisperKit.info("📝 Re-transcription: \(transcript))")
+                let samples = try AudioCapture.loadSamples(from: url)
+                guard let transcript = try await finalTranscript(for: samples) else {
+                    Log.speech.info("🔇 No speech detected in \(url.lastPathComponent)")
+                    return
+                }
+                Log.speech.info("📝 Re-transcription: \(transcript))")
 
-                // Add to our in-memory cache
                 RecordingsManager.shared.addTranscription(for: url, text: transcript)
             } catch {
-                Log.whisperKit.error("❌ Re-transcription error: \(error.localizedDescription))")
+                Log.speech.error("❌ Re-transcription error: \(error.localizedDescription))")
                 errorMessage = "Re-transcription error: \(error.localizedDescription)"
             }
         }
+    }
+
+    private func fadeOutIfEnabled() {
+        guard SettingsManager.shared.fadeVolumeEnabled else { return }
+        AudioFade.shared.fadeOut(duration: Double(SettingsManager.shared.fadeMilliseconds) / 1000.0)
+    }
+
+    private func fadeInIfEnabled() {
+        guard SettingsManager.shared.fadeVolumeEnabled else { return }
+        AudioFade.shared.fadeIn(duration: Double(SettingsManager.shared.fadeMilliseconds) / 1000.0)
     }
 }

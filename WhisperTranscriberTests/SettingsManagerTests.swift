@@ -19,8 +19,15 @@ final class SettingsManagerTests: XCTestCase {
         XCTAssertNotNil(settingsManager.suffix)
     }
 
-    func testModelPropertyExists() {
-        XCTAssertFalse(settingsManager.selectedModel.isEmpty)
+    func testLiveTranscriptionCanBeToggled() {
+        let original = settingsManager.liveTranscriptionEnabled
+        defer { settingsManager.liveTranscriptionEnabled = original }
+
+        settingsManager.liveTranscriptionEnabled = false
+        XCTAssertFalse(settingsManager.liveTranscriptionEnabled)
+
+        settingsManager.liveTranscriptionEnabled = true
+        XCTAssertTrue(settingsManager.liveTranscriptionEnabled)
     }
 
     func testFadeMillisecondsPropertyExists() {
@@ -39,10 +46,17 @@ final class SettingsManagerTests: XCTestCase {
         XCTAssertEqual(settingsManager.suffix, "\n\n---\n")
     }
 
-    func testModelCanBeUpdated() {
-        settingsManager.selectedModel = "openai_whisper-small"
+    func testCleanupOptionsFollowTheCleanupToggle() {
+        let original = settingsManager.cleanupEnabled
+        defer { settingsManager.cleanupEnabled = original }
 
-        XCTAssertEqual(settingsManager.selectedModel, "openai_whisper-small")
+        settingsManager.cleanupEnabled = false
+
+        XCTAssertFalse(settingsManager.cleanupOptions.enabled)
+
+        settingsManager.cleanupEnabled = true
+
+        XCTAssertTrue(settingsManager.cleanupOptions.enabled)
     }
 
     func testFadeMillisecondsCanBeUpdated() {

@@ -7,13 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		44104C7F2DC403F400993142 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 44104C7E2DC403F400993142 /* WhisperKit */; };
+		44104C7F2DC403F400993142 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 44104C7E2DC403F400993142 /* FluidAudio */; };
 		44104C8D2DC4111700993142 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 44104C8B2DC4111700993142 /* AudioToolbox.framework */; };
 		44104C8E2DC4111700993142 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 44104C8C2DC4111700993142 /* AudioUnit.framework */; };
 		44104DA02DC6EB9700993142 /* hf in Resources */ = {isa = PBXBuildFile; fileRef = 44104D9F2DC6EB9700993142 /* hf */; };
 		44104DB82DC6F81B00993142 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 44104C8B2DC4111700993142 /* AudioToolbox.framework */; };
 		44104DB92DC6F81B00993142 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 44104C8C2DC4111700993142 /* AudioUnit.framework */; };
-		44104DBA2DC6F81B00993142 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 44104DB52DC6F81B00993142 /* WhisperKit */; };
+		44104DBA2DC6F81B00993142 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 44104DB52DC6F81B00993142 /* FluidAudio */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -78,7 +78,7 @@
 			files = (
 				44104C8D2DC4111700993142 /* AudioToolbox.framework in Frameworks */,
 				44104C8E2DC4111700993142 /* AudioUnit.framework in Frameworks */,
-				44104C7F2DC403F400993142 /* WhisperKit in Frameworks */,
+				44104C7F2DC403F400993142 /* FluidAudio in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -88,7 +88,7 @@
 			files = (
 				44104DB82DC6F81B00993142 /* AudioToolbox.framework in Frameworks */,
 				44104DB92DC6F81B00993142 /* AudioUnit.framework in Frameworks */,
-				44104DBA2DC6F81B00993142 /* WhisperKit in Frameworks */,
+				44104DBA2DC6F81B00993142 /* FluidAudio in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -152,7 +152,7 @@
 			);
 			name = WhisperTranscriber;
 			packageProductDependencies = (
-				44104C7E2DC403F400993142 /* WhisperKit */,
+				44104C7E2DC403F400993142 /* FluidAudio */,
 			);
 			productName = WhisperTranscriber;
 			productReference = 44104C6E2DC402A000993142 /* WhisperTranscriber.app */;
@@ -175,7 +175,7 @@
 			);
 			name = WhisperTranscriberLite;
 			packageProductDependencies = (
-				44104DB52DC6F81B00993142 /* WhisperKit */,
+				44104DB52DC6F81B00993142 /* FluidAudio */,
 			);
 			productName = WhisperTranscriber;
 			productReference = 44104DC02DC6F81B00993142 /* WhisperTranscriberLite.app */;
@@ -233,7 +233,7 @@
 			mainGroup = 44104C652DC402A000993142;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				44104C7D2DC403F400993142 /* XCRemoteSwiftPackageReference "WhisperKit" */,
+				44104C7D2DC403F400993142 /* XCRemoteSwiftPackageReference "FluidAudio" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 44104C6F2DC402A000993142 /* Products */;
@@ -339,7 +339,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 3QYF6TV64Q;
@@ -405,7 +405,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 3QYF6TV64Q;
@@ -437,7 +437,7 @@
 				CODE_SIGN_ENTITLEMENTS = WhisperTranscriber/WhisperTranscriber.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 3QYF6TV64Q;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -451,7 +451,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.6.1;
+				MARKETING_VERSION = 1.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.joaoanes.WhisperTranscriber;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -468,7 +468,7 @@
 				CODE_SIGN_ENTITLEMENTS = WhisperTranscriber/WhisperTranscriber.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 3QYF6TV64Q;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -482,7 +482,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.6.1;
+				MARKETING_VERSION = 1.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.joaoanes.WhisperTranscriber;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -499,7 +499,7 @@
 				CODE_SIGN_ENTITLEMENTS = WhisperTranscriber/WhisperTranscriber.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 3QYF6TV64Q;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -513,7 +513,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.6.1;
+				MARKETING_VERSION = 1.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.joaoanes.WhisperTranscriberLite;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -531,7 +531,7 @@
 				CODE_SIGN_ENTITLEMENTS = WhisperTranscriber/WhisperTranscriber.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 3QYF6TV64Q;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -545,7 +545,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.6.1;
+				MARKETING_VERSION = 1.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.joaoanes.WhisperTranscriberLite;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -559,10 +559,10 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
-				MARKETING_VERSION = 1.6.1;
+				MARKETING_VERSION = 1.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.WhisperTranscriberTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -579,10 +579,10 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
-				MARKETING_VERSION = 1.6.1;
+				MARKETING_VERSION = 1.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.WhisperTranscriberTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -636,24 +636,26 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		44104C7D2DC403F400993142 /* XCRemoteSwiftPackageReference "WhisperKit" */ = {
+		44104C7D2DC403F400993142 /* XCRemoteSwiftPackageReference "FluidAudio" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/argmaxinc/WhisperKit.git";
+			repositoryURL = "https://github.com/FluidInference/FluidAudio.git";
 			requirement = {
-				branch = main;
-				kind = branch;
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.16.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		44104C7E2DC403F400993142 /* WhisperKit */ = {
+		44104C7E2DC403F400993142 /* FluidAudio */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = WhisperKit;
+			package = 44104C7D2DC403F400993142 /* XCRemoteSwiftPackageReference "FluidAudio" */;
+			productName = FluidAudio;
 		};
-		44104DB52DC6F81B00993142 /* WhisperKit */ = {
+		44104DB52DC6F81B00993142 /* FluidAudio */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = WhisperKit;
+			package = 44104C7D2DC403F400993142 /* XCRemoteSwiftPackageReference "FluidAudio" */;
+			productName = FluidAudio;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -1,7 +1,6 @@
 import AVFoundation
 import Foundation
 import Dispatch
-import WhisperKit
 import AppKit
 import SwiftUI
 import Carbon
@@ -44,13 +43,18 @@ func getRecordingsDirectory() -> URL? {
     return recordingsDirectory
 }
 
-func getModelsDirectory() -> URL? {
+func getAppSupportDirectory() -> URL? {
     guard let applicationSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
         return nil
     }
-    let modelsDirectory = applicationSupport
-        .appendingPathComponent("WhisperTranscriber")
-        .appendingPathComponent("Models")
+    return applicationSupport.appendingPathComponent("WhisperTranscriber")
+}
+
+func getModelsDirectory() -> URL? {
+    guard let appSupport = getAppSupportDirectory() else {
+        return nil
+    }
+    let modelsDirectory = appSupport.appendingPathComponent("Models")
 
     if !FileManager.default.fileExists(atPath: modelsDirectory.path) {
         do {

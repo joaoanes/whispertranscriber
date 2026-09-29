@@ -1,15 +1,19 @@
 # WhisperTranscriber
 
-WhisperTranscriber is a macOS application that allows users to record audio and transcribe it into text using WhisperKit. The transcribed text is automatically copied to the clipboard for easy access.
+WhisperTranscriber is a macOS application that allows users to record audio and transcribe it into text locally. The transcribed text is automatically copied to the clipboard for easy access.
 
 <img width="338" alt="Screenshot 2025-05-01 at 22 40 40" src="https://github.com/user-attachments/assets/0870c8ac-a7e2-448f-b44b-77a055abe092" />
 
 ## Features
 
-- Utilizes [WhisperKit](https://github.com/argmaxinc/WhisperKit) for transcription.
+- Uses Parakeet TDT v3 on the Neural Engine via [FluidAudio](https://github.com/FluidInference/FluidAudio) for transcription.
 - Record audio using the system microphone.
-- Transcribe audio to text locally.
-- Copy transcribed text to the clipboard.
+- Transcribe audio to text locally, in 25 European languages.
+- Live transcription in the menu bar popover while you speak, with the record's transcript growing as each phrase lands.
+- Silero VAD trims silence before the final pass and skips recordings with no speech in them.
+- Optional speaker detection, labelling each turn in the final transcript for conversations recorded off the microphone.
+- Deterministic text cleanup: filler removal and whitespace/punctuation tidying, with no LLM involved.
+- Copy the finished transcript to the clipboard.
 - Configure a global hotkey to toggle recording.
 
 ## Installation
@@ -20,7 +24,7 @@ WhisperTranscriber is a macOS application that allows users to record audio and 
    cd WhisperTranscriber
    ```
 
-2. Dependencies are fetched automatically from Swift Package Manager, including the remote [WhisperKit](https://github.com/argmaxinc/WhisperKit) package maintained by Argmax.
+2. Dependencies are fetched automatically from Swift Package Manager, including the remote [FluidAudio](https://github.com/FluidInference/FluidAudio) package maintained by Fluid Inference.
 
 3. Open the project in Xcode 26.0.1 or newer:
    ```bash
@@ -31,8 +35,36 @@ WhisperTranscriber is a macOS application that allows users to record audio and 
 
 ### Model assets
 
-The Xcode project copies the contents of `~/Documents/hf` into the application bundle. When building locally, download the
-WhisperKit Core ML models you need (for example from Hugging Face) and drop them into that directory before archiving.
+The Xcode project copies the contents of `~/Documents/hf` into the application bundle. The `WhisperTranscriber` target expects
+the Core ML bundles to be staged there before archiving; the `WhisperTranscriberLite` target ships without them and downloads
+them into `~/Library/Application Support/WhisperTranscriber` on first launch instead.
+
+The expected layout is:
+
+```
+~/Documents/hf/models/FluidInference
+├── parakeet-tdt-0.6b-v3
+│   ├── Preprocessor.mlmodelc
+│   ├── Encoder.mlmodelc
+│   ├── Decoder.mlmodelc
+│   ├── JointDecisionv3.mlmodelc
+│   ├── parakeet_vocab.json
+│   └── parakeet_v3_vocab.json
+└── silero-vad
+    └── silero-vad-unified-256ms-v6.2.1.mlmodelc
+```
+
+The folder names matter and are **not** the Hugging Face repo names: FluidAudio resolves models by its own local cache name,
+which is the repo name with `-coreml` stripped. The simplest way to stage them is to run the Lite target once and copy the two
+populated folders out of `~/Library/Application Support/WhisperTranscriber/Models`, which are already named correctly.
+
+To fetch them by hand instead, clone and drop the `-coreml` suffix:
+
+```bash
+git lfs install
+git clone https://huggingface.co/FluidInference/parakeet-tdt-0.6b-v3-coreml ~/Documents/hf/models/FluidInference/parakeet-tdt-0.6b-v3
+git clone https://huggingface.co/FluidInference/silero-vad-coreml ~/Documents/hf/models/FluidInference/silero-vad
+```
 
 CI builds create an empty directory at `/Users/runner/work/Documents/hf` so the resource copy phase succeeds without bundling
 large model artifacts.

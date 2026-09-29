@@ -44,8 +44,8 @@ final class RecorderViewModelTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 100_000_000)
     }
 
-    func testReinitWhisperKitResetsPrewarmingState() async {
-        await recorderViewModel.reinitWhisperKit()
+    func testReloadEngineResetsPrewarmingState() async {
+        await recorderViewModel.reloadEngine()
 
         XCTAssertFalse(recorderViewModel.isPrewarming)
     }
