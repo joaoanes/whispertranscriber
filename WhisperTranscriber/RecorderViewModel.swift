@@ -13,7 +13,16 @@ class RecorderViewModel: ObservableObject {
     @Published private(set) var isTranscribing = false
     @Published private(set) var downloadProgress: Double = 0.0
     @Published private(set) var livePreview = ""
+    @Published private(set) var isLiveForCurrentRecording = false
     @Published var errorMessage: String?
+
+    var activity: RecorderActivity {
+        if isDownloading { return .downloading }
+        if isPrewarming { return .preparing }
+        if isTranscribing { return .transcribing }
+        if isRecording { return isLiveForCurrentRecording ? .recordingLive : .recording }
+        return .idle
+    }
 
     private let engine: SpeechTranscribing
     private let capture: AudioCapturing
@@ -86,6 +95,7 @@ class RecorderViewModel: ObservableObject {
             let chunks = try capture.start(writingTo: url, emittingChunks: live)
             recordingURL = url
             isRecording = true
+            isLiveForCurrentRecording = live
             livePreview = ""
             if let chunks {
                 previewTask = Task { [weak self] in

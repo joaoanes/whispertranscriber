@@ -19,7 +19,7 @@ struct WhisperTranscriberView: View {
                 IdleRecordingView(
                     settings: settings,
                     isRecording: vm.isRecording,
-                    isTranscribing: vm.isTranscribing,
+                    activity: vm.activity,
                     livePreview: vm.livePreview,
                     showRecords: showRecords
                 )
@@ -91,16 +91,19 @@ struct LivePreviewView: View {
 struct IdleRecordingView: View {
     @ObservedObject var settings: SettingsManager
     var isRecording: Bool
-    var isTranscribing: Bool
+    var activity: RecorderActivity
     var livePreview: String
     var showRecords: () -> Void
 
     private func statusText() -> String {
-        if isTranscribing {
+        switch activity {
+        case .transcribing:
             return "🔄 Transcribing…"
-        } else if isRecording {
+        case .recordingLive:
+            return "🛑 Recording… (live)"
+        case .recording:
             return "🛑 Recording…"
-        } else {
+        default:
             return "▶️ Idle"
         }
     }
@@ -200,7 +203,7 @@ struct WhisperTranscriberView_Previews: PreviewProvider {
             IdleRecordingView(
                 settings: SettingsManager.shared,
                 isRecording: false,
-                isTranscribing: false,
+                activity: .idle,
                 livePreview: "",
                 showRecords: {}
             )
@@ -210,7 +213,7 @@ struct WhisperTranscriberView_Previews: PreviewProvider {
             IdleRecordingView(
                 settings: SettingsManager.shared,
                 isRecording: true,
-                isTranscribing: false,
+                activity: .recordingLive,
                 livePreview: "This is what a live transcript looks like as it streams in.",
                 showRecords: {}
             )

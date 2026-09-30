@@ -75,18 +75,24 @@ private extension WhisperTranscriberApp {
     }
 }
 
+private extension Color {
+    static let darkOrange = Color(red: 0.72, green: 0.28, blue: 0.0)
+}
+
 private extension WhisperTranscriberApp {
     func getForegroundColor(vm: RecorderViewModel) -> Color {
-        switch true {
-        case vm.isDownloading:
+        switch vm.activity {
+        case .downloading:
             return .purple
-        case vm.isTranscribing:
-            return .blue // whisper is running
-        case vm.isPrewarming:
-            return .red // pre-warming in progress
-        case vm.isRecording:
-            return .orange // actively recording
-        default:
+        case .preparing:
+            return .red
+        case .transcribing:
+            return .blue
+        case .recordingLive:
+            return .darkOrange
+        case .recording:
+            return .orange
+        case .idle:
             return .white
         }
     }
