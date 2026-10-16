@@ -12,9 +12,11 @@ class RecorderViewModel: ObservableObject {
     @Published private(set) var isPrewarming = true
     @Published private(set) var isTranscribing = false
     @Published private(set) var downloadProgress: Double = 0.0
-    @Published private(set) var livePreview = ""
+    @Published private(set) var liveSegments: [LiveSegment] = []
     @Published private(set) var isLiveForCurrentRecording = false
     @Published var errorMessage: String?
+
+    var livePreview: String { liveSegments.text }
 
     var activity: RecorderActivity {
         if isDownloading { return .downloading }
@@ -92,11 +94,15 @@ class RecorderViewModel: ObservableObject {
 
         do {
             fadeOutIfEnabled()
-            let chunks = try capture.start(writingTo: url, emittingChunks: live)
+            let chunks = try capture.start(
+                writingTo: url,
+                emittingChunks: live,
+                inputDevice: selectedInputDevice()?.id
+            )
             recordingURL = url
             isRecording = true
             isLiveForCurrentRecording = live
-            livePreview = ""
+            liveSegments = []
             if let chunks {
                 previewTask = Task { [weak self] in
                     await self?.followLivePreview(chunks, for: url)
@@ -108,6 +114,17 @@ class RecorderViewModel: ObservableObject {
             errorMessage = "Could not start recording: \(error.localizedDescription)"
             fadeInIfEnabled()
         }
+    }
+
+    private func selectedInputDevice() -> AudioInputDevice? {
+        let uid = SettingsManager.shared.inputDeviceUID
+        guard uid != SettingsManager.systemDefaultInput else { return nil }
+        guard let device = AudioInputDevices.device(withUID: uid) else {
+            Log.recording.info("🎙️ Selected microphone \(uid)) is not connected, using system default")
+            return nil
+        }
+        Log.recording.info("🎙️ Using microphone \(device.name))")
+        return device
     }
 
     private func followLivePreview(_ chunks: AsyncStream<[Float]>, for url: URL) async {
@@ -126,8 +143,8 @@ class RecorderViewModel: ObservableObject {
             guard let text = try? await engine.transcribe(Array(captured[segment])), !text.isEmpty
             else { continue }
 
-            accumulator.append(text)
-            livePreview = accumulator.text
+            accumulator.append(text, startingAt: Double(segment.lowerBound) / AudioCapture.sampleRate)
+            liveSegments = accumulator.segments
             Log.speech.info("📝 Live segment: \(text)")
             RecordingsManager.shared.addTranscription(for: url, text: livePreview)
         }
@@ -171,7 +188,7 @@ class RecorderViewModel: ObservableObject {
         do {
             guard let transcript = try await finalTranscript(for: samples) else {
                 Log.speech.info("🔇 No speech detected, skipping transcription")
-                livePreview = ""
+                liveSegments = []
                 return
             }
 
@@ -181,7 +198,7 @@ class RecorderViewModel: ObservableObject {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(transcript, forType: .string)
             RecordingsManager.shared.addTranscription(for: url, text: transcript)
-            livePreview = ""
+            liveSegments = []
         } catch {
             Log.speech.error("❌ Transcription error: \(error.localizedDescription))")
             errorMessage = "Transcription error: \(error.localizedDescription)"

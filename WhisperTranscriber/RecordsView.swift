@@ -1,43 +1,55 @@
 import SwiftUI
 
 struct RecordsView: View {
+    static let windowID = "records"
+
     @StateObject private var viewModel = RecordsViewModel()
 
     var body: some View {
-        VStack {
+        Group {
             if viewModel.displayableRecordings.isEmpty {
-                Text("No recordings yet")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                ContentUnavailableView(
+                    "No Recordings",
+                    systemImage: "waveform",
+                    description: Text("Recordings appear here after you use the shortcut.")
+                )
             } else {
                 List(viewModel.displayableRecordings) { recording in
-                    RecordingRowView(recording: recording) {
-                        viewModel.retranscribe(recording: recording)
-                    }
-                    .disabled(viewModel.isTranscribing)
+                    RecordingRowView(recording: recording)
+                        .contextMenu {
+                            Button("Copy Transcript", systemImage: "doc.on.doc") {
+                                viewModel.copyTranscript(of: recording)
+                            }
+                            .disabled(recording.transcription == nil)
+                            Button("Re-transcribe", systemImage: "arrow.clockwise") {
+                                viewModel.retranscribe(recording: recording)
+                            }
+                            .disabled(viewModel.isTranscribing)
+                            Divider()
+                            Button("Show in Finder", systemImage: "folder") {
+                                viewModel.reveal(recording)
+                            }
+                        }
                 }
+                .listStyle(.inset(alternatesRowBackgrounds: true))
             }
-
-            Button("Refresh List") {
-                viewModel.refresh()
+        }
+        .toolbar {
+            ToolbarItem {
+                Button("Open in Finder", systemImage: "folder") {
+                    viewModel.openRecordingsFolder()
+                }
+                .help("Open the recordings folder in Finder")
+                .disabled(viewModel.recordingsManager.recordingsDirectory == nil)
             }
-            .padding()
-
-            Text("Watching folder: \(viewModel.recordingsManager.recordingsDirectory?.path() ?? "no path found")")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .padding(.bottom, 8)
         }
         .onAppear {
             viewModel.refresh()
         }
-        .frame(minWidth: 400, minHeight: 400)
+        .frame(minWidth: 420, minHeight: 400)
     }
 }
 
-struct RecordsView_Previews: PreviewProvider {
-    static var previews: some View {
-        RecordsView()
-    }
+#Preview {
+    RecordsView()
 }

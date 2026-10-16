@@ -31,52 +31,45 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 @main
 struct WhisperTranscriberApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    
+
     @StateObject private var vm = RecorderViewModel.shared
     @StateObject private var settings = SettingsManager.shared
 
-    @State private var recordsWindowController: RecordsWindowController?
-
     var body: some Scene {
         MenuBarExtra {
-            WhisperTranscriberView(showRecords: showRecords)
+            WhisperTranscriberView()
         } label: {
             Image(nsImage: tintedImage(named: "icon", color: getForegroundColor(vm: vm)))
         }
         .menuBarExtraStyle(.window)
         .commands {
-            appCommands
-        }
-    }
-
-
-    private func showRecords() {
-        if recordsWindowController == nil {
-            let controller = RecordsWindowController()
-            controller.onWindowClose = { [self] in
-                self.recordsWindowController = nil
+            CommandGroup(after: .appInfo) {
+                ShowRecordsCommand()
             }
-            self.recordsWindowController = controller
         }
-        recordsWindowController?.showWindow(nil)
-        NSApp.activate(ignoringOtherApps: true)
-    }
-}
 
-private extension WhisperTranscriberApp {
-    @CommandsBuilder
-    var appCommands: some Commands {
-        CommandGroup(after: .appInfo) {
-            Button("Show Records") {
-                showRecords()
-            }
-            .keyboardShortcut("r", modifiers: [.command, .control])
+        Window("Records", id: RecordsView.windowID) {
+            RecordsView()
+        }
+        .defaultSize(width: 480, height: 560)
+        .defaultLaunchBehavior(.suppressed)
+
+        Settings {
+            SettingsView(settings: settings)
         }
     }
 }
 
-private extension Color {
-    static let darkOrange = Color(red: 0.72, green: 0.28, blue: 0.0)
+private struct ShowRecordsCommand: View {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Button("Show Records") {
+            openWindow(id: RecordsView.windowID)
+            NSApp.activate()
+        }
+        .keyboardShortcut("r", modifiers: [.command, .control])
+    }
 }
 
 private extension WhisperTranscriberApp {

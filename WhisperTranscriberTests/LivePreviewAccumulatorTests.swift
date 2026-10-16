@@ -54,8 +54,8 @@ final class LivePreviewAccumulatorTests: XCTestCase {
     func testAppendJoinsSegmentsWithASingleSpace() {
         var accumulator = LivePreviewAccumulator()
 
-        accumulator.append("First sentence.")
-        accumulator.append("Second sentence.")
+        accumulator.append("First sentence.", startingAt: 0)
+        accumulator.append("Second sentence.", startingAt: 0)
 
         XCTAssertEqual(accumulator.text, "First sentence. Second sentence.")
     }
@@ -63,9 +63,9 @@ final class LivePreviewAccumulatorTests: XCTestCase {
     func testAppendTrimsAndSkipsEmptySegments() {
         var accumulator = LivePreviewAccumulator()
 
-        accumulator.append("  Hello.  ")
-        accumulator.append("   ")
-        accumulator.append("")
+        accumulator.append("  Hello.  ", startingAt: 0)
+        accumulator.append("   ", startingAt: 0)
+        accumulator.append("", startingAt: 0)
 
         XCTAssertEqual(accumulator.text, "Hello.")
     }
@@ -74,7 +74,7 @@ final class LivePreviewAccumulatorTests: XCTestCase {
         var accumulator = LivePreviewAccumulator()
 
         _ = accumulator.claimSegment(upTo: 16_000, capturedCount: 20_000)
-        accumulator.append("Old recording.")
+        accumulator.append("Old recording.", startingAt: 0)
 
         accumulator.reset()
 

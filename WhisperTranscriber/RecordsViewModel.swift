@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Combine
 import AVFoundation
@@ -94,5 +95,20 @@ class RecordsViewModel: ObservableObject {
 
     func refresh() {
         recordingsManager.scanForRecordings()
+    }
+
+    func copyTranscript(of recording: DisplayableRecording) {
+        guard let transcription = recording.transcription else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(transcription, forType: .string)
+    }
+
+    func reveal(_ recording: DisplayableRecording) {
+        NSWorkspace.shared.activateFileViewerSelecting([recording.id])
+    }
+
+    func openRecordingsFolder() {
+        guard let directory = recordingsManager.recordingsDirectory else { return }
+        NSWorkspace.shared.open(directory)
     }
 }

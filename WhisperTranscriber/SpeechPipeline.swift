@@ -1,3 +1,4 @@
+import CoreAudio
 import Foundation
 
 protocol SpeechTranscribing: Sendable {
@@ -12,7 +13,7 @@ protocol SpeechTranscribing: Sendable {
 
 protocol AudioCapturing: AnyObject {
     var samples: [Float] { get }
-    func start(writingTo url: URL, emittingChunks: Bool) throws -> AsyncStream<[Float]>?
+    func start(writingTo url: URL, emittingChunks: Bool, inputDevice: AudioDeviceID?) throws -> AsyncStream<[Float]>?
     func stop()
 }
 

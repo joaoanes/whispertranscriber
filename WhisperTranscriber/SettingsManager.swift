@@ -13,6 +13,9 @@ class SettingsManager: ObservableObject {
     @AppStorage("cleanupEnabled") var cleanupEnabled: Bool = true
     @AppStorage("removeUm") var removeUm: Bool = false
     @AppStorage("speakerDetectionEnabled") var speakerDetectionEnabled: Bool = false
+    @AppStorage("inputDeviceUID") var inputDeviceUID: String = SettingsManager.systemDefaultInput
+
+    static let systemDefaultInput = ""
 
     var cleanupOptions: TextCleanupOptions {
         guard cleanupEnabled else { return .disabled }

@@ -1,3 +1,4 @@
+import CoreAudio
 import Foundation
 @testable import WhisperTranscriber
 
@@ -9,7 +10,7 @@ final class FakeAudioCapture: AudioCapturing, @unchecked Sendable {
     private(set) var emittedChunks: Bool?
     private var continuation: AsyncStream<[Float]>.Continuation?
 
-    func start(writingTo url: URL, emittingChunks: Bool) throws -> AsyncStream<[Float]>? {
+    func start(writingTo url: URL, emittingChunks: Bool, inputDevice: AudioDeviceID?) throws -> AsyncStream<[Float]>? {
         samples = []
         emittedChunks = emittingChunks
 
