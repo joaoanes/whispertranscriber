@@ -62,6 +62,40 @@ final class SpokenAudioIntegrationTests: XCTestCase {
         }
     }
 
+    func testSpokenAudioStreamsThroughTheRealEngineBeforeTheRecordingEnds() async throws {
+        try requireModels()
+
+        let engine = ParakeetEngine()
+        try await engine.prepare { _ in }
+
+        let speech = try Self.speak(
+            "The quick brown fox jumps over the lazy dog. Then it runs into the forest and disappears."
+        )
+        let samples = speech + [Float](repeating: 0, count: 64_000)
+        let updates = try await engine.startLiveTranscription()
+
+        let collecting = Task {
+            var accumulator = LivePreviewAccumulator()
+            for await update in updates {
+                accumulator.append(update.text, startingAt: update.startsAt)
+            }
+            return accumulator
+        }
+
+        for start in stride(from: 0, to: samples.count, by: 1365) {
+            await engine.feedLive(Array(samples[start..<min(start + 1365, samples.count)]))
+        }
+        try await Task.sleep(for: .seconds(8))
+        await engine.finishLiveTranscription()
+        let streamed = await collecting.value
+
+        XCTAssertTrue(
+            streamed.text.lowercased().contains("quick brown fox"),
+            "expected streamed text before finishing, got: \(streamed.text)"
+        )
+        XCTAssertEqual(streamed.segments.first?.startsAt ?? -1, 0, accuracy: 1.0)
+    }
+
     func testSpokenAudioTranscribesThroughTheRealEngine() async throws {
         try requireModels()
 

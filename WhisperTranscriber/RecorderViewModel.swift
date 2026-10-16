@@ -128,26 +128,30 @@ class RecorderViewModel: ObservableObject {
     }
 
     private func followLivePreview(_ chunks: AsyncStream<[Float]>, for url: URL) async {
-        await engine.resetSpeechBoundaries()
+        let updates: AsyncStream<LiveTranscriptChunk>
+        do {
+            updates = try await engine.startLiveTranscription()
+        } catch {
+            Log.speech.error("❌ Could not start live transcription: \(error.localizedDescription))")
+            for await _ in chunks {}
+            return
+        }
+
+        let feeding = Task { [engine] in
+            for await chunk in chunks {
+                await engine.feedLive(chunk)
+            }
+            await engine.finishLiveTranscription()
+        }
+
         var accumulator = LivePreviewAccumulator()
-
-        for await chunk in chunks {
-            guard let boundary = try? await engine.speechEndIndex(in: chunk) else { continue }
-
-            let captured = capture.samples
-            guard let segment = accumulator.claimSegment(
-                upTo: boundary,
-                capturedCount: captured.count
-            ) else { continue }
-
-            guard let text = try? await engine.transcribe(Array(captured[segment])), !text.isEmpty
-            else { continue }
-
-            accumulator.append(text, startingAt: Double(segment.lowerBound) / AudioCapture.sampleRate)
+        for await update in updates {
+            accumulator.append(update.text, startingAt: update.startsAt)
             liveSegments = accumulator.segments
-            Log.speech.info("📝 Live segment: \(text)")
+            Log.speech.info("📝 Live segment: \(update.text)")
             RecordingsManager.shared.addTranscription(for: url, text: livePreview)
         }
+        await feeding.value
     }
 
     func stopRecording() {

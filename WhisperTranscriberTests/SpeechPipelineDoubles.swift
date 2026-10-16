@@ -36,22 +36,23 @@ final class FakeAudioCapture: AudioCapturing, @unchecked Sendable {
 }
 
 actor ScriptedEngine: SpeechTranscribing {
-    private let boundaries: [Int]
     private let partials: [String]
+    private let partialEvery: Int
     private let final: String
 
-    private var processed = 0
-    private var nextBoundary = 0
+    private var fed = 0
     private var nextPartial = 0
     private var finalizing = false
+    private var liveContinuation: AsyncStream<LiveTranscriptChunk>.Continuation?
 
-    private(set) var boundaryChecks = 0
+    private(set) var liveSessions = 0
+    private(set) var fedSampleCount = 0
     private(set) var usedSpeakerPath = false
     private(set) var transcribedSampleCounts: [Int] = []
 
-    init(boundaries: [Int] = [], partials: [String] = [], final: String = "Final transcript.") {
-        self.boundaries = boundaries
+    init(partials: [String] = [], partialEvery: Int = 16_000, final: String = "Final transcript.") {
         self.partials = partials
+        self.partialEvery = partialEvery
         self.final = final
     }
 
@@ -61,18 +62,29 @@ actor ScriptedEngine: SpeechTranscribing {
 
     func unload() async {}
 
-    func resetSpeechBoundaries() async {
-        processed = 0
-        nextBoundary = 0
+    func startLiveTranscription() async throws -> AsyncStream<LiveTranscriptChunk> {
+        liveSessions += 1
+        fed = 0
+        let (stream, continuation) = AsyncStream<LiveTranscriptChunk>.makeStream()
+        liveContinuation = continuation
+        return stream
     }
 
-    func speechEndIndex(in chunk: [Float]) async throws -> Int? {
-        boundaryChecks += 1
-        processed += chunk.count
-        guard nextBoundary < boundaries.count, processed >= boundaries[nextBoundary] else { return nil }
-        let boundary = boundaries[nextBoundary]
-        nextBoundary += 1
-        return boundary
+    func feedLive(_ samples: [Float]) async {
+        fedSampleCount += samples.count
+        fed += samples.count
+        while nextPartial < partials.count, fed >= partialEvery * (nextPartial + 1) {
+            liveContinuation?.yield(LiveTranscriptChunk(
+                text: partials[nextPartial],
+                startsAt: Double(partialEvery * nextPartial) / AudioCapture.sampleRate
+            ))
+            nextPartial += 1
+        }
+    }
+
+    func finishLiveTranscription() async {
+        liveContinuation?.finish()
+        liveContinuation = nil
     }
 
     func speechOnly(_ samples: [Float]) async throws -> [Float] {
@@ -87,10 +99,6 @@ actor ScriptedEngine: SpeechTranscribing {
 
     func transcribe(_ samples: [Float]) async throws -> String {
         transcribedSampleCounts.append(samples.count)
-        guard !finalizing else { return final }
-        guard nextPartial < partials.count else { return "" }
-        let partial = partials[nextPartial]
-        nextPartial += 1
-        return partial
+        return final
     }
 }

@@ -1,10 +1,12 @@
 import Foundation
 
-struct LiveSegment: Equatable, Identifiable {
+struct LiveSegment: Equatable {
     let startsAt: TimeInterval
     let text: String
 
-    var id: TimeInterval { startsAt }
+    var endsSentence: Bool {
+        text.last.map { ".?!…".contains($0) } ?? false
+    }
 }
 
 extension Array where Element == LiveSegment {
@@ -13,27 +15,37 @@ extension Array where Element == LiveSegment {
     }
 }
 
+extension String {
+    var sentences: [String] {
+        var sentences: [String] = []
+        enumerateSubstrings(in: startIndex..<endIndex, options: .bySentences) { sentence, _, _, _ in
+            guard let trimmed = sentence?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !trimmed.isEmpty
+            else { return }
+            sentences.append(trimmed)
+        }
+        return sentences
+    }
+}
+
 struct LivePreviewAccumulator {
-    private(set) var committed = 0
     private(set) var segments: [LiveSegment] = []
 
     var text: String { segments.text }
 
-    mutating func claimSegment(upTo boundary: Int, capturedCount: Int) -> Range<Int>? {
-        guard boundary > committed, boundary <= capturedCount else { return nil }
-        let segment = committed..<boundary
-        committed = boundary
-        return segment
-    }
-
     mutating func append(_ transcript: String, startingAt startsAt: TimeInterval) {
-        let trimmed = transcript.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
-        segments.append(LiveSegment(startsAt: startsAt, text: trimmed))
+        transcript.sentences.forEach { append(sentence: $0, startingAt: startsAt) }
     }
 
     mutating func reset() {
-        committed = 0
         segments = []
+    }
+
+    private mutating func append(sentence: String, startingAt startsAt: TimeInterval) {
+        guard let last = segments.last, !last.endsSentence else {
+            segments.append(LiveSegment(startsAt: startsAt, text: sentence))
+            return
+        }
+        segments[segments.count - 1] = LiveSegment(startsAt: last.startsAt, text: last.text + " " + sentence)
     }
 }

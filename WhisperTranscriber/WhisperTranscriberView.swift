@@ -21,7 +21,45 @@ struct Tile<Content: View>: View {
         content
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.fill.tertiary, in: .rect(cornerRadius: 12))
+            .glassTile()
+    }
+}
+
+extension View {
+    @ViewBuilder
+    func glassTile() -> some View {
+        if #available(macOS 26, *) {
+            glassEffect(.regular, in: .rect(cornerRadius: 16))
+        } else {
+            background(.fill.tertiary, in: .rect(cornerRadius: 12))
+        }
+    }
+
+    @ViewBuilder
+    func glassGroup(spacing: CGFloat) -> some View {
+        if #available(macOS 26, *) {
+            GlassEffectContainer(spacing: spacing) { self }
+        } else {
+            self
+        }
+    }
+
+    @ViewBuilder
+    func primaryActionStyle() -> some View {
+        if #available(macOS 26, *) {
+            buttonStyle(.glassProminent)
+        } else {
+            buttonStyle(.borderedProminent)
+        }
+    }
+
+    @ViewBuilder
+    func iconActionStyle() -> some View {
+        if #available(macOS 26, *) {
+            buttonStyle(.glass).buttonBorderShape(.circle)
+        } else {
+            buttonStyle(.borderless)
+        }
     }
 }
 
@@ -88,10 +126,11 @@ struct PrewarmingView: View {
                 Spacer()
                 QuitButton()
             }
-            .buttonStyle(.borderless)
+            .iconActionStyle()
             .labelStyle(.iconOnly)
             .padding(.horizontal, 4)
         }
+        .glassGroup(spacing: 8)
         .padding(12)
         .frame(width: 320)
     }
@@ -169,6 +208,7 @@ struct PopoverView: View {
 
             footer
         }
+        .glassGroup(spacing: 8)
         .padding(12)
         .frame(width: 320)
         .fixedSize(horizontal: false, vertical: true)
@@ -182,7 +222,7 @@ struct PopoverView: View {
                 .symbolEffect(.pulse, isActive: activity.isRecording)
             Spacer()
             Button(activity.isRecording ? "Stop" : "Record", action: toggleRecording)
-                .buttonStyle(.borderedProminent)
+                .primaryActionStyle()
                 .tint(activity.isRecording ? activity.tint : .accentColor)
                 .controlSize(.large)
                 .disabled(!activity.canToggleRecording)
@@ -209,7 +249,7 @@ struct PopoverView: View {
             .help("Settings")
             QuitButton()
         }
-        .buttonStyle(.borderless)
+        .iconActionStyle()
         .labelStyle(.iconOnly)
         .padding(.horizontal, 4)
     }

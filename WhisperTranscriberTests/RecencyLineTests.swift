@@ -32,18 +32,15 @@ final class RecencyLineTests: XCTestCase {
         XCTAssertEqual(RecencyLine.format(3725), "1:02:05")
     }
 
-    func testCopyingSkipsTheTimestampGutter() {
+    func testTimestampsLiveOutsideTheSelectableText() {
         let lines = RecencyLine.lines(in: [
             LiveSegment(startsAt: 3, text: "Hello there."),
             LiveSegment(startsAt: 75, text: "Fine.")
         ])
         let document = TranscriptDocument.build(lines)
 
-        let copied = TranscriptDocument.copyableText(
-            in: document,
-            ranges: [NSRange(location: 0, length: document.length)]
-        )
-
-        XCTAssertEqual(copied, "Hello there.\nFine.")
+        XCTAssertEqual(document.string, "Hello there.\nFine.")
+        XCTAssertEqual(TranscriptDocument.timestamps(in: document).map(\.text), ["0:03", "1:15"])
+        XCTAssertEqual(TranscriptDocument.timestamps(in: document).map(\.location), [0, 13])
     }
 }
