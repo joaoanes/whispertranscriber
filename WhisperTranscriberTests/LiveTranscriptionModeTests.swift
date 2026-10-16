@@ -25,14 +25,15 @@ final class LiveTranscriptionModeTests: XCTestCase {
     }
 
     private func makeRecorder(
+        boundaries: [Int],
         partials: [String],
         final: String,
         sampleCount: Int
     ) -> (RecorderViewModel, FakeAudioCapture, ScriptedEngine) {
-        let engine = ScriptedEngine(partials: partials, final: final)
+        let engine = ScriptedEngine(boundaries: boundaries, partials: partials, final: final)
         let capture = FakeAudioCapture()
         capture.scriptedSamples = [Float](repeating: 0.1, count: sampleCount)
-        let recorder = RecorderViewModel(engine: engine, capture: capture, prewarm: false)
+        let recorder = RecorderViewModel(engine: engine, capture: capture, liveTiming: .pausesOnly, prewarm: false)
         return (recorder, capture, engine)
     }
 
@@ -49,9 +50,10 @@ final class LiveTranscriptionModeTests: XCTestCase {
         XCTFail("Timed out waiting for \(description)")
     }
 
-    func testLiveOnStreamsPartialsIntoThePopoverAndTheRecord() async throws {
+    func testLiveOnAccumulatesPartialsIntoThePopoverAndTheRecord() async throws {
         SettingsManager.shared.liveTranscriptionEnabled = true
         let (recorder, capture, engine) = makeRecorder(
+            boundaries: [16_000, 32_000],
             partials: ["First phrase.", "Second phrase."],
             final: "First phrase. Second phrase.",
             sampleCount: 48_000
@@ -63,10 +65,9 @@ final class LiveTranscriptionModeTests: XCTestCase {
             recorder.livePreview == "First phrase. Second phrase."
         }
 
-        let fed = await engine.fedSampleCount
-        XCTAssertEqual(fed, 48_000, "every captured sample should be streamed to the live engine")
+        let emitted = await engine.transcribedSampleCounts
+        XCTAssertEqual(emitted, [16_000, 16_000], "each partial should cover only its own new audio")
         XCTAssertEqual(capture.emittedChunks, true)
-        XCTAssertEqual(recorder.liveSegments.map(\.startsAt), [0, 1], "each sentence keeps its start time")
 
         recorder.stopRecording()
         await recorder.finalizeTask?.value
@@ -80,6 +81,7 @@ final class LiveTranscriptionModeTests: XCTestCase {
     func testLiveOffRunsNoInferenceUntilTheRecordingStops() async throws {
         SettingsManager.shared.liveTranscriptionEnabled = false
         let (recorder, capture, engine) = makeRecorder(
+            boundaries: [16_000, 32_000],
             partials: ["Should never appear."],
             final: "Only the final transcript.",
             sampleCount: 48_000
@@ -89,15 +91,15 @@ final class LiveTranscriptionModeTests: XCTestCase {
 
         XCTAssertEqual(capture.emittedChunks, false, "capture must not emit chunks when live is off")
 
-        let sessionsWhileRecording = await engine.liveSessions
-        XCTAssertEqual(sessionsWhileRecording, 0, "streaming must not run while live transcription is off")
+        let checksWhileRecording = await engine.boundaryChecks
+        XCTAssertEqual(checksWhileRecording, 0, "VAD must not run while live transcription is off")
         XCTAssertEqual(recorder.livePreview, "")
 
         recorder.stopRecording()
         await recorder.finalizeTask?.value
 
-        let sessionsAfterStop = await engine.liveSessions
-        XCTAssertEqual(sessionsAfterStop, 0)
+        let checksAfterStop = await engine.boundaryChecks
+        XCTAssertEqual(checksAfterStop, 0)
 
         let emitted = await engine.transcribedSampleCounts
         XCTAssertEqual(emitted, [48_000], "exactly one pass, over the whole recording")
@@ -107,6 +109,7 @@ final class LiveTranscriptionModeTests: XCTestCase {
     func testChoiceIsLockedInForTheWholeRecording() async throws {
         SettingsManager.shared.liveTranscriptionEnabled = false
         let (recorder, capture, engine) = makeRecorder(
+            boundaries: [16_000],
             partials: ["Should never appear."],
             final: "Final.",
             sampleCount: 32_000
@@ -119,14 +122,15 @@ final class LiveTranscriptionModeTests: XCTestCase {
         await recorder.finalizeTask?.value
 
         XCTAssertEqual(capture.emittedChunks, false)
-        let sessions = await engine.liveSessions
-        XCTAssertEqual(sessions, 0, "flipping the toggle mid-recording must not start live transcription")
+        let checks = await engine.boundaryChecks
+        XCTAssertEqual(checks, 0, "flipping the toggle mid-recording must not start live transcription")
         XCTAssertEqual(recorder.livePreview, "")
     }
 
     func testFinalTranscriptReplacesThePartialsInTheRecord() async throws {
         SettingsManager.shared.liveTranscriptionEnabled = true
         let (recorder, _, _) = makeRecorder(
+            boundaries: [16_000],
             partials: ["Rough partial."],
             final: "Corrected final transcript.",
             sampleCount: 32_000
@@ -167,11 +171,8 @@ final class LiveTranscriptionModeTests: XCTestCase {
 private actor SilentEngine: SpeechTranscribing {
     func prepare(progressCallback: @escaping @Sendable (Double) -> Void) async throws {}
     func unload() async {}
-    func startLiveTranscription() async throws -> AsyncStream<LiveTranscriptChunk> {
-        AsyncStream { $0.finish() }
-    }
-    func feedLive(_ samples: [Float]) async {}
-    func finishLiveTranscription() async {}
+    func resetSpeechBoundaries() async {}
+    func speechEndIndex(in chunk: [Float]) async throws -> Int? { nil }
     func speechOnly(_ samples: [Float]) async throws -> [Float] { [] }
     func transcribe(_ samples: [Float]) async throws -> String {
         XCTFail("transcribe must not be called when VAD finds no speech")

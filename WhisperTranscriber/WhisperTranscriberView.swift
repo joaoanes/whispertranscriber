@@ -21,17 +21,19 @@ struct Tile<Content: View>: View {
         content
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .glassTile()
+            .background(.fill.quaternary, in: .rect(cornerRadius: 14))
     }
 }
 
 extension View {
     @ViewBuilder
-    func glassTile() -> some View {
+    func glassCapsule() -> some View {
         if #available(macOS 26, *) {
-            glassEffect(.regular, in: .rect(cornerRadius: 16))
+            padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .glassEffect(.regular, in: .capsule)
         } else {
-            background(.fill.tertiary, in: .rect(cornerRadius: 12))
+            self
         }
     }
 
@@ -136,6 +138,21 @@ struct PrewarmingView: View {
     }
 }
 
+struct SettingRow<Content: View>: View {
+    let title: String
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        HStack {
+            Text(title)
+                .lineLimit(1)
+                .fixedSize()
+            Spacer(minLength: 8)
+            content
+        }
+    }
+}
+
 struct QuitButton: View {
     var body: some View {
         Button("Quit WhisperTranscriber", systemImage: "power") { NSApp.terminate(nil) }
@@ -190,15 +207,21 @@ struct PopoverView: View {
             }
 
             Tile {
-                VStack(spacing: 8) {
-                    Toggle("Live Transcription", isOn: $settings.liveTranscriptionEnabled)
-                        .help("Locked in when a recording starts. Off records silently and transcribes once at the end.")
-                    Toggle("Detect Speakers", isOn: $settings.speakerDetectionEnabled)
-                        .help("Labels each turn in the final transcript. For conversations, not dictation. Downloads ~130MB the first time.")
-                    LabeledContent("Microphone") {
+                VStack(spacing: 10) {
+                    SettingRow(title: "Live Transcription") {
+                        Toggle("Live Transcription", isOn: $settings.liveTranscriptionEnabled)
+                            .labelsHidden()
+                    }
+                    .help("Locked in when a recording starts. Off records silently and transcribes once at the end.")
+                    SettingRow(title: "Detect Speakers") {
+                        Toggle("Detect Speakers", isOn: $settings.speakerDetectionEnabled)
+                            .labelsHidden()
+                    }
+                    .help("Labels each turn in the final transcript. For conversations, not dictation. Downloads ~130MB the first time.")
+                    SettingRow(title: "Microphone") {
                         MicrophonePicker(selection: $settings.inputDeviceUID, devices: microphones.devices)
                             .labelsHidden()
-                            .fixedSize()
+                            .frame(maxWidth: 170)
                     }
                 }
                 .toggleStyle(.switch)
@@ -215,7 +238,8 @@ struct PopoverView: View {
     }
 
     private var header: some View {
-        HStack {
+        Tile {
+            HStack {
             Label(activity.title, systemImage: activity.symbol)
                 .font(.headline)
                 .foregroundStyle(activity.tint)
@@ -226,8 +250,8 @@ struct PopoverView: View {
                 .tint(activity.isRecording ? activity.tint : .accentColor)
                 .controlSize(.large)
                 .disabled(!activity.canToggleRecording)
+            }
         }
-        .padding(.horizontal, 4)
     }
 
     private var footer: some View {
@@ -235,6 +259,7 @@ struct PopoverView: View {
             Text(settings.hotkey)
                 .font(.caption.monospaced())
                 .foregroundStyle(.secondary)
+                .glassCapsule()
                 .help("Recording shortcut")
             Spacer()
             Button("Records", systemImage: "list.bullet.rectangle") {

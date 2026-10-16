@@ -23,16 +23,15 @@ struct RecencyLine: Identifiable, Equatable {
 
     static func lines(in segments: [LiveSegment]) -> [RecencyLine] {
         let sentences = segments.flatMap { segment in
-            segment.text.sentences.enumerated().map { index, sentence in
-                (text: sentence, startsAt: index == 0 ? segment.startsAt : nil)
-            }
+            segment.text.sentences.map { (text: $0, startsAt: segment.startsAt) }
         }
         return sentences.enumerated().map { index, sentence in
-            RecencyLine(
+            let repeatsPrevious = index > 0 && sentences[index - 1].startsAt == sentence.startsAt
+            return RecencyLine(
                 id: index,
                 text: sentence.text,
                 age: sentences.count - 1 - index,
-                startsAt: sentence.startsAt
+                startsAt: repeatsPrevious ? nil : sentence.startsAt
             )
         }
     }
@@ -89,8 +88,7 @@ enum TranscriptDocument {
     private static func color(forAge age: Int) -> NSColor {
         switch age {
         case 0: .labelColor
-        case 1: .secondaryLabelColor
-        default: .tertiaryLabelColor
+        default: .secondaryLabelColor
         }
     }
 }
@@ -116,7 +114,7 @@ final class TranscriptTextView: NSTextView {
 
         let attributes: [NSAttributedString.Key: Any] = [
             .font: TranscriptDocument.timestampFont,
-            .foregroundColor: NSColor.tertiaryLabelColor
+            .foregroundColor: NSColor.secondaryLabelColor
         ]
         for timestamp in TranscriptDocument.timestamps(in: textStorage) {
             let glyph = layoutManager.glyphIndexForCharacter(at: timestamp.location)
@@ -139,8 +137,8 @@ final class TranscriptScrollView: NSScrollView {
         wantsLayer = true
         fade.colors = [NSColor.clear.cgColor, NSColor.black.cgColor]
         fade.locations = [0, 0.15]
-        fade.startPoint = CGPoint(x: 0.5, y: 1)
-        fade.endPoint = CGPoint(x: 0.5, y: 0)
+        fade.startPoint = CGPoint(x: 0.5, y: 0)
+        fade.endPoint = CGPoint(x: 0.5, y: 1)
     }
 
     @available(*, unavailable)
@@ -182,8 +180,9 @@ struct TranscriptTextRepresentable: NSViewRepresentable {
         let scrollView = TranscriptScrollView(frame: .zero)
         scrollView.documentView = textView
         scrollView.drawsBackground = false
-        scrollView.hasVerticalScroller = true
-        scrollView.autohidesScrollers = true
+        scrollView.automaticallyAdjustsContentInsets = false
+        scrollView.contentInsets = NSEdgeInsetsZero
+        scrollView.hasVerticalScroller = false
         return scrollView
     }
 

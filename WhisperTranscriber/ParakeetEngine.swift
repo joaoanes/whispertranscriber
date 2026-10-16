@@ -1,4 +1,3 @@
-import AVFoundation
 import FluidAudio
 import Foundation
 
@@ -13,33 +12,12 @@ enum ParakeetEngineError: LocalizedError {
     }
 }
 
-struct LiveTranscriptChunk: Equatable, Sendable {
-    let text: String
-    let startsAt: TimeInterval
-}
-
-private struct LiveSession {
-    let manager: SlidingWindowAsrManager
-    let forwarding: Task<Void, Never>
-    let continuation: AsyncStream<LiveTranscriptChunk>.Continuation
-}
-
 actor ParakeetEngine {
-    static let liveConfig = SlidingWindowAsrConfig(
-        chunkSeconds: 2.0,
-        hypothesisChunkSeconds: 1.0,
-        leftContextSeconds: 11.0,
-        rightContextSeconds: 2.0,
-        minContextForConfirmation: 10.0,
-        confirmationThreshold: 0.85
-    )
-
-    private var models: AsrModels?
     private var asr: AsrManager?
     private var vad: VadManager?
     private var diarizer: DiarizerManager?
     private var decoderLayers = 2
-    private var live: LiveSession?
+    private var streamState: VadStreamState?
 
     var isReady: Bool { asr != nil }
 
@@ -48,18 +26,16 @@ actor ParakeetEngine {
         let manager = AsrManager(config: .default)
         try await manager.loadModels(models)
         decoderLayers = models.version.decoderLayers
-        self.models = models
         asr = manager
         vad = try await ParakeetModelLoader.loadVAD()
     }
 
-    func unload() async {
-        await finishLiveTranscription()
-        models = nil
+    func unload() {
         asr = nil
         vad = nil
         diarizer?.cleanup()
         diarizer = nil
+        streamState = nil
     }
 
     func transcribe(_ samples: [Float]) async throws -> String {
@@ -115,60 +91,16 @@ actor ParakeetEngine {
         return try await vad.segmentSpeechAudio(samples).flatMap { $0 }
     }
 
-    func startLiveTranscription() async throws -> AsyncStream<LiveTranscriptChunk> {
-        guard let models else { throw ParakeetEngineError.notReady }
-        await finishLiveTranscription()
-
-        let manager = SlidingWindowAsrManager(config: Self.liveConfig)
-        try await manager.loadModels(models)
-        try await manager.startStreaming(source: .microphone)
-        let updates = await manager.transcriptionUpdates
-
-        let (stream, continuation) = AsyncStream<LiveTranscriptChunk>.makeStream()
-        let forwarding = Task {
-            for await update in updates {
-                let text = update.text.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !text.isEmpty else { continue }
-                continuation.yield(LiveTranscriptChunk(
-                    text: text,
-                    startsAt: update.tokenTimings.first?.startTime ?? 0
-                ))
-            }
-        }
-        live = LiveSession(manager: manager, forwarding: forwarding, continuation: continuation)
-        return stream
+    func resetSpeechBoundaries() async {
+        guard let vad else { return }
+        streamState = await vad.makeStreamState()
     }
 
-    func feedLive(_ samples: [Float]) async {
-        guard let live, let buffer = Self.pcmBuffer(from: samples) else { return }
-        await live.manager.streamAudio(buffer)
-    }
-
-    func finishLiveTranscription() async {
-        guard let session = live else { return }
-        live = nil
-        session.continuation.finish()
-        session.forwarding.cancel()
-        await session.manager.cancel()
-    }
-
-    private static func pcmBuffer(from samples: [Float]) -> AVAudioPCMBuffer? {
-        guard !samples.isEmpty,
-              let format = AVAudioFormat(
-                  commonFormat: .pcmFormatFloat32,
-                  sampleRate: AudioCapture.sampleRate,
-                  channels: 1,
-                  interleaved: false
-              ),
-              let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(samples.count)),
-              let channel = buffer.floatChannelData
-        else { return nil }
-
-        buffer.frameLength = AVAudioFrameCount(samples.count)
-        samples.withUnsafeBufferPointer { source in
-            guard let base = source.baseAddress else { return }
-            channel[0].update(from: base, count: samples.count)
-        }
-        return buffer
+    func speechEndIndex(in chunk: [Float]) async throws -> Int? {
+        guard let vad, let state = streamState else { return nil }
+        let result = try await vad.processStreamingChunk(chunk, state: state)
+        streamState = result.state
+        guard let event = result.event, event.isEnd else { return nil }
+        return event.sampleIndex
     }
 }

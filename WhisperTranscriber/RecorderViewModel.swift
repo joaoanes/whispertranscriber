@@ -28,6 +28,7 @@ class RecorderViewModel: ObservableObject {
 
     private let engine: SpeechTranscribing
     private let capture: AudioCapturing
+    private let liveTiming: LiveTranscriptionTiming
     private var recordingURL: URL?
     private var previewTask: Task<Void, Never>?
     private var lastTranscript = ""
@@ -36,10 +37,12 @@ class RecorderViewModel: ObservableObject {
     init(
         engine: SpeechTranscribing = ParakeetEngine(),
         capture: AudioCapturing = AudioCapture(),
+        liveTiming: LiveTranscriptionTiming = .standard,
         prewarm: Bool = true
     ) {
         self.engine = engine
         self.capture = capture
+        self.liveTiming = liveTiming
         guard prewarm else {
             isPrewarming = false
             return
@@ -128,30 +131,17 @@ class RecorderViewModel: ObservableObject {
     }
 
     private func followLivePreview(_ chunks: AsyncStream<[Float]>, for url: URL) async {
-        let updates: AsyncStream<LiveTranscriptChunk>
-        do {
-            updates = try await engine.startLiveTranscription()
-        } catch {
-            Log.speech.error("❌ Could not start live transcription: \(error.localizedDescription))")
-            for await _ in chunks {}
-            return
-        }
+        let session = LiveTranscriptionSession(engine: engine, timing: liveTiming)
+        await session.begin()
 
-        let feeding = Task { [engine] in
-            for await chunk in chunks {
-                await engine.feedLive(chunk)
-            }
-            await engine.finishLiveTranscription()
+        for await chunk in chunks {
+            let committedCount = session.committed.count
+            guard let segments = await session.consume(chunk, captured: capture.samples) else { continue }
+            liveSegments = segments
+            guard session.committed.count > committedCount else { continue }
+            Log.speech.info("📝 Live segment: \(session.committed[committedCount...].map(\.text).joined(separator: " "))")
+            RecordingsManager.shared.addTranscription(for: url, text: session.committed.text)
         }
-
-        var accumulator = LivePreviewAccumulator()
-        for await update in updates {
-            accumulator.append(update.text, startingAt: update.startsAt)
-            liveSegments = accumulator.segments
-            Log.speech.info("📝 Live segment: \(update.text)")
-            RecordingsManager.shared.addTranscription(for: url, text: livePreview)
-        }
-        await feeding.value
     }
 
     func stopRecording() {

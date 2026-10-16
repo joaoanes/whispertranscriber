@@ -62,38 +62,40 @@ final class SpokenAudioIntegrationTests: XCTestCase {
         }
     }
 
-    func testSpokenAudioStreamsThroughTheRealEngineBeforeTheRecordingEnds() async throws {
+    func testLiveSessionShowsTheOpenUtteranceAndCommitsAtPauses() async throws {
         try requireModels()
 
         let engine = ParakeetEngine()
         try await engine.prepare { _ in }
 
-        let speech = try Self.speak(
-            "The quick brown fox jumps over the lazy dog. Then it runs into the forest and disappears."
-        )
-        let samples = speech + [Float](repeating: 0, count: 64_000)
-        let updates = try await engine.startLiveTranscription()
+        let samples = try Self.speak(
+            "The quick brown fox jumps over the lazy dog. [[slnc 1500]] Then it runs into the forest."
+        ) + [Float](repeating: 0, count: 32_000)
+        let session = LiveTranscriptionSession(engine: engine, timing: .standard)
+        await session.begin()
 
-        let collecting = Task {
-            var accumulator = LivePreviewAccumulator()
-            for await update in updates {
-                accumulator.append(update.text, startingAt: update.startsAt)
-            }
-            return accumulator
-        }
-
+        var captured: [Float] = []
+        var shownBeforeFirstCommit: [LiveSegment]?
         for start in stride(from: 0, to: samples.count, by: 1365) {
-            await engine.feedLive(Array(samples[start..<min(start + 1365, samples.count)]))
+            let chunk = Array(samples[start..<min(start + 1365, samples.count)])
+            captured += chunk
+            let shown = await session.consume(chunk, captured: captured)
+            if session.committed.isEmpty, let shown, !shown.isEmpty {
+                shownBeforeFirstCommit = shown
+            }
         }
-        try await Task.sleep(for: .seconds(8))
-        await engine.finishLiveTranscription()
-        let streamed = await collecting.value
 
+        XCTAssertNotNil(shownBeforeFirstCommit, "the open utterance should appear before the first pause")
         XCTAssertTrue(
-            streamed.text.lowercased().contains("quick brown fox"),
-            "expected streamed text before finishing, got: \(streamed.text)"
+            session.committed.text.lowercased().contains("quick brown fox"),
+            "expected the first utterance to be committed, got: \(session.committed.text)"
         )
-        XCTAssertEqual(streamed.segments.first?.startsAt ?? -1, 0, accuracy: 1.0)
+        XCTAssertTrue(
+            session.committed.text.lowercased().contains("forest"),
+            "expected the second utterance to be committed, got: \(session.committed.text)"
+        )
+        XCTAssertEqual(session.committed.first?.startsAt, 0)
+        XCTAssertGreaterThan(session.committed.last?.startsAt ?? 0, 2)
     }
 
     func testSpokenAudioTranscribesThroughTheRealEngine() async throws {

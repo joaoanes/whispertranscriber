@@ -7,9 +7,8 @@ protocol SpeechTranscribing: Sendable {
     func transcribe(_ samples: [Float]) async throws -> String
     func transcribeWithSpeakers(_ samples: [Float]) async throws -> String
     func speechOnly(_ samples: [Float]) async throws -> [Float]
-    func startLiveTranscription() async throws -> AsyncStream<LiveTranscriptChunk>
-    func feedLive(_ samples: [Float]) async
-    func finishLiveTranscription() async
+    func resetSpeechBoundaries() async
+    func speechEndIndex(in chunk: [Float]) async throws -> Int?
 }
 
 protocol AudioCapturing: AnyObject {
